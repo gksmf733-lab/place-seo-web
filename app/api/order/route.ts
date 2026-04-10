@@ -1,4 +1,9 @@
 import { saveJob, type OrderInput } from "@/lib/jobs";
+import { processJob } from "@/lib/pipeline";
+
+// Playwright가 백그라운드 작업에서 호출되므로 Node 런타임 명시
+export const runtime = "nodejs";
+export const maxDuration = 300;
 
 function isNonEmptyString(v: unknown): v is string {
   return typeof v === "string" && v.trim().length > 0;
@@ -55,6 +60,10 @@ export async function POST(req: Request) {
 
   try {
     const job = await saveJob(input);
+    // 백그라운드로 스크래핑 + 작업지 생성 (fire-and-forget)
+    void processJob(job).catch((err) => {
+      console.error(`[order] background processJob failed for ${job.id}:`, err);
+    });
     return Response.json({ ok: true, id: job.id });
   } catch (err) {
     console.error("[order] saveJob failed", err);
