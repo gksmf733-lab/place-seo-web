@@ -1,0 +1,9 @@
+[project]
+name = "place-seo-tool"
+version = "0.1.0"
+description = "네이버 플레이스 SEO 최적화 작업지 생성기"
+requires-python = ">=3.11"
+dependencies = [
+    "playwright>=1.48.0",
+    "pyyaml>=6.0.2",
+]

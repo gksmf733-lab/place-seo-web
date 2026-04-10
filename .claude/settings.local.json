@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git ls-remote:*)",
+      "Bash(node scripts/install-apply.js --help)",
+      "Bash(node _tmp_ecc/scripts/install-apply.js --target antigravity --profile full --dry-run)",
+      "Bash(npm install:*)",
+      "Bash(node _tmp_ecc/scripts/install-apply.js --target antigravity --profile full)",
+      "Bash(rm:*)",
+      "Bash(py --version)",
+      "Bash(uv --version)",
+      "Bash(where python:*)",
+      "Bash(where python3:*)",
+      "Bash(where py:*)",
+      "Bash(winget install:*)",
+      "Bash(C:/Users/Z840/AppData/Local/Microsoft/WinGet/Packages/astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe/uv.exe:*)",
+      "Bash(export PATH=\"$PATH:/c/Users/Z840/AppData/Local/Microsoft/WinGet/Packages/astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe\")",
+      "Bash(uv sync:*)",
+      "Bash(uv run:*)",
+      "Bash(npm --version)",
+      "Bash(pnpm --version)",
+      "Bash(corepack enable:*)",
+      "Bash(mkdir -p scripts/python)",
+      "Bash(mv main.py pyproject.toml uv.lock sections output scripts/python/)",
+      "Bash(rm -rf .venv)",
+      "Bash(npx --yes create-next-app@latest . --typescript --tailwind --eslint --app --src-dir=false --import-alias=\"@/*\" --no-turbopack --use-npm --yes)",
+      "Bash(npx --yes create-next-app@latest place-seo-web --typescript --tailwind --eslint --app --no-src-dir --import-alias=\"@/*\" --no-turbopack --use-npm)",
+      "Bash(rm -rf place-seo-web/.git)",
+      "Bash(mv place-seo-web/.gitignore place-seo-web/.next place-seo-web/AGENTS.md place-seo-web/CLAUDE.md place-seo-web/app place-seo-web/eslint.config.mjs place-seo-web/next.config.ts place-seo-web/next-env.d.ts place-seo-web/node_modules place-seo-web/package.json place-seo-web/package-lock.json place-seo-web/postcss.config.mjs place-seo-web/public place-seo-web/README.md place-seo-web/tsconfig.json .)",
+      "Bash(rmdir place-seo-web:*)",
+      "Bash(npx --yes shadcn@latest init --yes --base-color=neutral)",
+      "Bash(npx --yes shadcn@latest init --help)",
+      "Bash(npx --yes shadcn@latest init --defaults --force)"
+    ]
+  }
+}
