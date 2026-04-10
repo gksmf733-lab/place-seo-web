@@ -1,8 +1,34 @@
 import type { ScrapedPlace } from "@/lib/scraper/types";
 import type { Section } from "@/lib/sections";
 
+export type SectionView = {
+  order: number;
+  name: string;
+  description: string;
+  guide: string;
+  prompt: string;
+};
+
 function orMissing(v: string): string {
   return v ? v : "(추출 실패)";
+}
+
+export function buildSectionViews(
+  data: ScrapedPlace,
+  sections: readonly Section[],
+): SectionView[] {
+  const placeBlock = formatPlaceDataBlock(data);
+  const rawExcerpt = data.rawText || "(원문 추출 실패)";
+  return sections.map((sec, idx) => ({
+    order: idx + 1,
+    name: sec.name || `섹션 ${idx + 1}`,
+    description: sec.description,
+    guide: sec.guide.trim(),
+    prompt: sec.prompt
+      .replaceAll("{place_data}", placeBlock)
+      .replaceAll("{raw_excerpt}", rawExcerpt)
+      .trim(),
+  }));
 }
 
 export function formatPlaceDataBlock(data: ScrapedPlace): string {
