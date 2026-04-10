@@ -39,3 +39,24 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 런타임 저장소 (Job/Scrape/Override JSON 파일)
+# data/sections 는 git에 트래킹 (템플릿 정본)
+/data/jobs/
+/data/scrapes/
+/data/overrides/
+
+# Python legacy artifacts
+/scripts/python/.venv/
+/scripts/python/output/
+/scripts/python/__pycache__/
+**/__pycache__/
+
+# Claude / Antigravity internal (기존 메타 툴킷)
+/.agent/
+/.claude/
+
+# Editor
+.vscode/
+.idea/
+*.swp
