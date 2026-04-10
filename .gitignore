@@ -44,6 +44,7 @@ next-env.d.ts
 # data/sections 는 git에 트래킹 (템플릿 정본)
 /data/jobs/
 /data/scrapes/
+/data/worksheets/
 /data/overrides/
 
 # Python legacy artifacts
