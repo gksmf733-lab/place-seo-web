@@ -3,8 +3,10 @@ import { updateJob, listJobs } from "@/lib/jobs";
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
+  let rawBody = "";
   try {
-    const body = await req.json();
+    rawBody = await req.text(); // 스트림을 텍스트로 전부 읽음
+    const body = JSON.parse(rawBody); // JSON 파싱 시도
 
     // AI Canvas 형식: { "placeId": "...", "reviews": [...] }
     const { placeId, reviews } = body;
@@ -37,6 +39,13 @@ export async function POST(req: Request) {
     );
   } catch (err) {
     console.error("[api/reviews] Error processing reviews:", err);
-    return Response.json({ error: "서버 오류 발생" }, { status: 500 });
+    return Response.json(
+      { 
+        error: "JSON 파싱 오류 발생. AI Canvas에서 보낸 포맷이 깨졌습니다.",
+        receivedBody: rawBody,
+        details: err instanceof Error ? err.message : String(err)
+      }, 
+      { status: 500 }
+    );
   }
 }
