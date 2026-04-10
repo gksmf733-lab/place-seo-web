@@ -30,7 +30,28 @@
       "Bash(rmdir place-seo-web:*)",
       "Bash(npx --yes shadcn@latest init --yes --base-color=neutral)",
       "Bash(npx --yes shadcn@latest init --help)",
-      "Bash(npx --yes shadcn@latest init --defaults --force)"
+      "Bash(npx --yes shadcn@latest init --defaults --force)",
+      "Bash(npx --yes shadcn@latest add input textarea card sonner badge label --yes)",
+      "Bash(PORT=3456 timeout 25 npm run dev)",
+      "Bash(PORT=3456 timeout 20 npm run dev)",
+      "Bash(PORT=3456 npm run dev)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:3456/)",
+      "Bash(curl -s http://localhost:3456/)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:3456/order)",
+      "Bash(curl -s http://localhost:3456/order)",
+      "Bash(kill %1)",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(taskkill //IM node.exe //F)",
+      "Bash(npm run:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm i:*)",
+      "Bash(npx playwright:*)",
+      "Bash(mkdir -p \"C:/Users/Z840/Desktop/안티그래비티/플레이스 자동화/data/sections\")",
+      "Bash(cp \"C:/Users/Z840/Desktop/안티그래비티/플레이스 자동화/scripts/python/sections/\"*.yaml \"C:/Users/Z840/Desktop/안티그래비티/플레이스 자동화/data/sections/\")",
+      "Bash(curl:*)",
+      "Bash(node -e \"setTimeout\\(\\(\\)=>{},35000\\)\")",
+      "Bash(grep -o \"총.\\\\{0,30\\\\}건\")",
+      "Bash(grep -oE '섹션[^<]{0,10}')"
     ]
   }
 }

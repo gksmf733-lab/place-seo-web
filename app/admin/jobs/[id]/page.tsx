@@ -1,5 +1,3 @@
-import { promises as fs } from "node:fs";
-import path from "node:path";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -51,21 +49,6 @@ function formatDate(iso?: string): string {
   }
 }
 
-async function readScrapedPlace(
-  relPath?: string,
-): Promise<ScrapedPlace | null> {
-  if (!relPath) return null;
-  try {
-    const raw = await fs.readFile(
-      path.join(process.cwd(), relPath),
-      "utf8",
-    );
-    return JSON.parse(raw) as ScrapedPlace;
-  } catch {
-    return null;
-  }
-}
-
 function formatRating(data: ScrapedPlace): string {
   if (data.rating && data.visitorReviews) {
     return `${data.rating}점 · 방문자 ${data.visitorReviews} · 블로그 ${data.blogReviews}`;
@@ -81,10 +64,9 @@ export default async function AdminJobDetailPage({ params }: PageProps) {
   const job = await readJob(id);
   if (!job) notFound();
 
-  const scraped =
-    job.scrapeStatus === "done"
-      ? await readScrapedPlace(job.scrapePath)
-      : null;
+  const scraped = job.scrapedData as ScrapedPlace | null;
+  const reviews = job.reviewsData; // AI Canvas에서 받아온 리뷰 데이터
+  
   const sections = scraped ? await loadSections() : [];
   const sectionViews =
     scraped && sections.length > 0
@@ -130,9 +112,9 @@ export default async function AdminJobDetailPage({ params }: PageProps) {
 
         <Card>
           <CardHeader>
-            <CardTitle>스크래핑 상태</CardTitle>
+            <CardTitle>스크래핑(DB 저장) 상태</CardTitle>
             <CardDescription>
-              Playwright로 네이버 플레이스 정보를 추출한 결과입니다.
+              정보 추출 및 데이터베이스 저장 상태입니다.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
@@ -166,7 +148,7 @@ export default async function AdminJobDetailPage({ params }: PageProps) {
             <CardHeader>
               <CardTitle>추출된 플레이스 정보</CardTitle>
               <CardDescription>
-                섹션 프롬프트에 이 정보가 그대로 주입됩니다.
+                섹션 프롬프트 작성의 기반이 되는 데이터입니다.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
@@ -197,7 +179,7 @@ export default async function AdminJobDetailPage({ params }: PageProps) {
                 )}
               </div>
 
-              {scraped.menuItems.length > 0 && (
+              {scraped.menuItems && scraped.menuItems.length > 0 && (
                 <div className="pt-2">
                   <p className="text-muted-foreground mb-2">메뉴</p>
                   <ul className="list-disc space-y-0.5 pl-5">
@@ -212,7 +194,7 @@ export default async function AdminJobDetailPage({ params }: PageProps) {
         ) : job.scrapeStatus === "done" ? (
           <Card>
             <CardContent className="py-8 text-center text-sm text-muted-foreground">
-              스크래핑 결과 파일을 찾을 수 없습니다. (`{job.scrapePath}`)
+              DB에 스크래핑된 상세 정보가 없습니다.
             </CardContent>
           </Card>
         ) : (
@@ -223,8 +205,32 @@ export default async function AdminJobDetailPage({ params }: PageProps) {
           </Card>
         )}
 
+        {/* AI Canvas에서 넘어온 리뷰 데이터 패널 */}
+        {reviews ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>AI Canvas 수집 리뷰</CardTitle>
+              <CardDescription>
+                AI Canvas 워크플로우를 통해 생성/수집된 데이터입니다.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <pre className="max-h-60 overflow-auto rounded-md border bg-muted/40 px-4 py-3 text-xs whitespace-pre-wrap break-words">
+                {JSON.stringify(reviews, null, 2)}
+              </pre>
+            </CardContent>
+          </Card>
+        ) : job.placeId ? (
+          <Card>
+            <CardContent className="py-8 text-center text-sm text-muted-foreground">
+              AI Canvas에서 접수된 리뷰(분석) 결과가 없습니다.<br />
+              현재 Place ID: <strong>{job.placeId}</strong>
+            </CardContent>
+          </Card>
+        ) : null}
+
         {sectionViews.length > 0 && (
-          <div className="space-y-2">
+          <div className="space-y-2 pt-4">
             <h2 className="text-xl font-bold tracking-tight">섹션별 작업지</h2>
             <p className="text-sm text-muted-foreground">
               각 프롬프트를 복사해서 Antigravity / Claude 채팅창에 붙여넣으세요.
