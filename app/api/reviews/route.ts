@@ -3,36 +3,45 @@ import { updateJob, listJobs } from "@/lib/jobs";
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
-  let rawBody = "";
   try {
-    rawBody = await req.text(); // 스트림을 텍스트로 전부 읽음
-    const body = JSON.parse(rawBody); // JSON 파싱 시도
+    // URL에서 placeId를 찾습니다 (예: ?placeId=12345)
+    const url = new URL(req.url);
+    let placeId = url.searchParams.get("placeId");
 
-    // AI Canvas 형식: { "placeId": "...", "reviews": [...] }
-    const { placeId, reviews } = body;
+    // 만약 JSON 방식으로 보냈을 경우를 대비한 하위 호환성 (하지만 에러 날 수 있음)
+    let rawBody = await req.text();
+    let reviewsData: any = rawBody;
 
-    if (!placeId || !reviews) {
+    try {
+      // 1. JSON으로 보냈을 경우 시도
+      const parsed = JSON.parse(rawBody);
+      if (parsed.placeId) placeId = parsed.placeId;
+      if (parsed.reviews) reviewsData = parsed.reviews;
+    } catch {
+      // 2. JSON이 아니거나 깨졌으면 그냥 넘어감 (rawBody 통째로 리뷰로 간주)
+      // 이 경우 placeId는 주소창(?placeId=...)에 무조건 있어야 함
+    }
+
+    if (!placeId) {
       return Response.json(
-        { error: "placeId와 reviews 데이터가 필요합니다." },
+        { error: "placeId가 필요합니다. 주소 끝에 ?placeId={{변수}} 를 붙여주세요." },
         { status: 400 },
       );
     }
 
-    // 파일 시스템 저장 코드를 제거하고 전체 Job 리스트를 DB에서 불러와 매칭되는 내역을 업데이트
     const jobs = await listJobs();
     const relatedJob = jobs.find(
-      (j) => j.placeId === placeId || j.url.includes(placeId),
+      (j) => j.placeId === placeId || j.url.includes(placeId as string),
     );
 
     if (relatedJob) {
-      await updateJob(relatedJob.id, { reviewsData: reviews });
+      await updateJob(relatedJob.id, { reviewsData: reviewsData });
       return Response.json({
         ok: true,
         message: "리뷰 데이터 DB 저장 완료",
       });
     }
 
-    // 관련 Job을 찾지 못해도 리뷰 결과를 보존할 경우의 대안 처리 (현재는 404 리턴)
     return Response.json(
       { error: "제출된 placeId와 일치하는 주문 내역이 없습니다." },
       { status: 404 },
@@ -40,12 +49,9 @@ export async function POST(req: Request) {
   } catch (err) {
     console.error("[api/reviews] Error processing reviews:", err);
     return Response.json(
-      { 
-        error: "JSON 파싱 오류 발생. AI Canvas에서 보낸 포맷이 깨졌습니다.",
-        receivedBody: rawBody,
-        details: err instanceof Error ? err.message : String(err)
-      }, 
+      { error: "서버 처리 중 오류 발생", details: err instanceof Error ? err.message : String(err) }, 
       { status: 500 }
     );
   }
 }
+
