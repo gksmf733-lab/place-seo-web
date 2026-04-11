@@ -21,6 +21,13 @@ const nextConfig: NextConfig = {
     "playwright-core",
     "playwright",
   ],
+  // 서버리스 함수 번들에 @sparticuz/chromium 의 브로틀리 압축 바이너리를
+  // 강제로 포함시킨다. Next.js 의 파일 추적(file tracing)은 정적 import 만
+  // 따라가므로 동적 load 되는 바이너리 파일은 직접 지정해야 한다.
+  outputFileTracingIncludes: {
+    "/api/order": ["./node_modules/@sparticuz/chromium/bin/**"],
+    "/api/scrape/**": ["./node_modules/@sparticuz/chromium/bin/**"],
+  },
 };
 
 export default nextConfig;
