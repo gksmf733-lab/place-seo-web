@@ -135,6 +135,8 @@ export default async function AdminJobDetailPage({
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? "";
   const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
   const canvasApiUrl = host ? `${proto}://${host}/api/canvas/place/${job.id}` : `/api/canvas/place/${job.id}`;
+  const canvasJobsUrl = host ? `${proto}://${host}/api/canvas/jobs` : `/api/canvas/jobs`;
+  const canvasJobsPeekUrl = `${canvasJobsUrl}?peek=1`;
 
   // DB에서 프롬프트 라이브러리 로드 후, 쿼리 파라미터에 따라 섹션별 선택 결정
   const allPrompts = await listPrompts();
@@ -217,34 +219,108 @@ export default async function AdminJobDetailPage({
 
         <Card>
           <CardHeader>
-            <CardTitle>IA CANVAS 연동</CardTitle>
+            <CardTitle>AI Canvas 연동 (Pull 모델)</CardTitle>
             <CardDescription>
-              IA CANVAS의 <strong>커스텀 API 노드</strong>에 아래 URL을 붙여넣으면
-              이 업체의 Place ID·URL·스크래핑 결과가 JSON으로 자동 송출됩니다.
-              (Method: GET, JSON→CSV 자동 변환 ON 권장)
+              AI Canvas의 <strong>커스텀 API 노드(단일 요청, GET)</strong>에 아래
+              <strong> 목록 URL</strong>을 붙여넣고, 스케줄 탭에서 <strong>매분</strong>
+              주기로 등록하면 신규 업체가 자동으로 AI Canvas에 송출됩니다.
+              한 번 송출된 job은 다시 포함되지 않습니다.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            <div className="grid grid-cols-[8rem_1fr] gap-y-2 items-start">
-              <span className="text-muted-foreground pt-1">엔드포인트</span>
+          <CardContent className="space-y-4 text-sm">
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground">
+                ① 목록 엔드포인트 (커스텀 API 노드에 입력)
+              </p>
+              <div className="flex items-start gap-2">
+                <code className="flex-1 break-all rounded-md border bg-muted/40 px-3 py-2 font-mono text-xs">
+                  {canvasJobsUrl}
+                </code>
+                <CopyButton text={canvasJobsUrl} label="URL 복사" />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Method: <span className="font-mono">GET</span> · 자동 변환(JSON→CSV):
+                <strong> 켜짐</strong> · 응답은 스크래핑 완료 + 미송출 job의 배열
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground">
+                ② 디버깅용 미리보기 URL (호출해도 송출 마킹 안 함)
+              </p>
+              <div className="flex items-start gap-2">
+                <code className="flex-1 break-all rounded-md border bg-muted/40 px-3 py-2 font-mono text-xs">
+                  {canvasJobsPeekUrl}
+                </code>
+                <CopyButton text={canvasJobsPeekUrl} label="URL 복사" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground">
+                ③ 이 업체 단건 URL (개별 조회용, 마킹 없음)
+              </p>
               <div className="flex items-start gap-2">
                 <code className="flex-1 break-all rounded-md border bg-muted/40 px-3 py-2 font-mono text-xs">
                   {canvasApiUrl}
                 </code>
                 <CopyButton text={canvasApiUrl} label="URL 복사" />
               </div>
-              <span className="text-muted-foreground pt-1">Method</span>
-              <span className="font-mono">GET</span>
-              <span className="text-muted-foreground pt-1">반환 Place ID</span>
-              <span className="font-mono">
-                {job.placeId || scraped?.placeId || "(스크래핑 대기 중)"}
-              </span>
             </div>
-            <p className="text-xs text-muted-foreground">
-              반환 필드: jobId, placeId, placeName, url, scrapedUrl, name, category,
-              address, phone, hours, homepage, amenities, rating, visitorReviews,
-              blogReviews, description 등.
-            </p>
+
+            <div className="rounded-md border bg-muted/30 px-3 py-2 text-xs space-y-1">
+              <p className="font-semibold">현재 이 job의 송출 상태</p>
+              <p>
+                <span className="text-muted-foreground">Place ID: </span>
+                <span className="font-mono">
+                  {job.placeId || scraped?.placeId || "(스크래핑 대기 중)"}
+                </span>
+              </p>
+              <p>
+                <span className="text-muted-foreground">AI Canvas 송출: </span>
+                {job.canvasPulledAt ? (
+                  <span>✅ {formatDate(job.canvasPulledAt)}에 송출됨</span>
+                ) : job.scrapeStatus === "done" ? (
+                  <span className="text-amber-700 dark:text-amber-300">
+                    ⏳ 다음 스케줄 실행 시 송출 예정
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground">
+                    스크래핑 완료 후 송출 대기
+                  </span>
+                )}
+              </p>
+            </div>
+
+            <details className="text-xs">
+              <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                AI Canvas 쪽 셋업 방법 보기
+              </summary>
+              <ol className="list-decimal space-y-1 pl-5 pt-2 text-muted-foreground">
+                <li>
+                  AI Canvas에서 새 캔버스 생성 → <strong>커스텀 API</strong>
+                  노드를 캔버스에 드래그
+                </li>
+                <li>
+                  속성 패널: <strong>요청 모드 = 단일 요청</strong>,
+                  <strong> URL</strong>에 위 ① 목록 엔드포인트 붙여넣기,
+                  <strong> Method = GET</strong>,
+                  <strong> 자동 변환 켜짐</strong>
+                </li>
+                <li>
+                  <strong>네이버 플레이스 리뷰</strong> 노드를 추가하고 커스텀 API
+                  노드의 출력 포트를 입력 포트에 연결. 플레이스 ID 입력 항목에
+                  <strong> placeId</strong> 컬럼 지정
+                </li>
+                <li>
+                  (선택) 이후 전처리/분석/저장 노드를 원하는 대로 연결
+                </li>
+                <li>
+                  캔버스 우측 <strong>스케줄</strong> 탭 → 대상 노드로 커스텀 API
+                  노드 선택 → 주기 <strong>매분</strong> (또는 5분) → 등록
+                </li>
+              </ol>
+            </details>
           </CardContent>
         </Card>
 
