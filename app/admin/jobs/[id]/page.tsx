@@ -249,39 +249,64 @@ export default async function AdminJobDetailPage({ params }: PageProps) {
                 <ExcelDownloadButton data={displayReviews} fileName={`${job.placeName || "업체"}_리브데이터.csv`} />
               </CardHeader>
               <CardContent>
-                <div className="rounded-md border max-h-[600px] overflow-auto relative">
-                  <table className="w-full text-sm text-left">
-                    <thead className="sticky top-0 bg-secondary/95 backdrop-blur-sm text-muted-foreground text-xs uppercase z-10 border-b">
+                <div className="rounded-md border max-h-[600px] overflow-auto relative bg-background">
+                  <table className="min-w-full border-separate border-spacing-0 text-xs">
+                    <thead>
                       <tr>
-                        <th className="px-4 py-3 font-semibold whitespace-nowrap">연번</th>
-                        <th className="px-4 py-3 font-semibold w-full min-w-[300px]">리뷰 내용</th>
-                        <th className="px-4 py-3 font-semibold whitespace-nowrap text-center">방문일</th>
-                        <th className="px-4 py-3 font-semibold whitespace-nowrap text-center">작성일</th>
-                        <th className="px-4 py-3 font-semibold whitespace-nowrap text-center">조회수</th>
-                        <th className="px-4 py-3 font-semibold min-w-[150px]">키워드</th>
+                        <th className="sticky top-0 left-0 z-30 w-12 min-w-[3rem] border-r border-b bg-secondary/95 backdrop-blur-sm px-3 py-2 text-center font-semibold text-muted-foreground uppercase">
+                          #
+                        </th>
+                        <th className="sticky top-0 z-20 min-w-[360px] w-[42%] border-r border-b bg-secondary/95 backdrop-blur-sm px-3 py-2 text-left font-semibold text-muted-foreground uppercase">
+                          리뷰 내용
+                        </th>
+                        <th className="sticky top-0 z-20 w-28 min-w-[7rem] border-r border-b bg-secondary/95 backdrop-blur-sm px-3 py-2 text-center font-semibold text-muted-foreground uppercase">
+                          방문일
+                        </th>
+                        <th className="sticky top-0 z-20 w-28 min-w-[7rem] border-r border-b bg-secondary/95 backdrop-blur-sm px-3 py-2 text-center font-semibold text-muted-foreground uppercase">
+                          작성일
+                        </th>
+                        <th className="sticky top-0 z-20 w-20 min-w-[5rem] border-r border-b bg-secondary/95 backdrop-blur-sm px-3 py-2 text-right font-semibold text-muted-foreground uppercase">
+                          조회수
+                        </th>
+                        <th className="sticky top-0 z-20 min-w-[180px] w-[22%] border-b bg-secondary/95 backdrop-blur-sm px-3 py-2 text-left font-semibold text-muted-foreground uppercase">
+                          키워드
+                        </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y">
-                      {displayReviews.map((r: any, idx: number) => (
-                        <tr key={idx} className="hover:bg-muted/50 transition-colors bg-background group">
-                          <td className="px-4 py-3 text-muted-foreground whitespace-nowrap text-xs">{idx + 1}</td>
-                          <td className="px-4 py-3 font-medium select-text whitespace-pre-wrap leading-relaxed">
-                            {typeof r === 'string' ? r : (r.review || "-")}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-muted-foreground text-center text-xs select-text">
-                            {r.visitedAt || "-"}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-muted-foreground text-center text-xs select-text">
-                            {r.createdAt || "-"}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-muted-foreground text-center text-xs select-text">
-                            {r.viewCount || "-"}
-                          </td>
-                          <td className="px-4 py-3 text-xs text-muted-foreground select-text whitespace-pre-wrap italic">
-                            {r.keywords || "-"}
-                          </td>
-                        </tr>
-                      ))}
+                    <tbody>
+                      {displayReviews.map((r: any, idx: number) => {
+                        const rowBg =
+                          idx % 2 === 0 ? "bg-background" : "bg-muted/40";
+                        return (
+                          <tr
+                            key={idx}
+                            className={`group ${rowBg} hover:bg-accent/50 transition-colors`}
+                          >
+                            <td
+                              className={`sticky left-0 z-10 w-12 min-w-[3rem] border-r border-b px-3 py-2 text-center font-mono text-[0.7rem] text-muted-foreground tabular-nums ${rowBg} group-hover:bg-accent/50`}
+                            >
+                              {idx + 1}
+                            </td>
+                            <td className="border-r border-b px-3 py-2 align-top whitespace-pre-wrap leading-relaxed text-foreground select-text">
+                              {typeof r === "string"
+                                ? r
+                                : r.review || "-"}
+                            </td>
+                            <td className="border-r border-b px-3 py-2 text-center align-top whitespace-nowrap font-mono text-[0.7rem] text-muted-foreground tabular-nums select-text">
+                              {r.visitedAt || "-"}
+                            </td>
+                            <td className="border-r border-b px-3 py-2 text-center align-top whitespace-nowrap font-mono text-[0.7rem] text-muted-foreground tabular-nums select-text">
+                              {r.createdAt || "-"}
+                            </td>
+                            <td className="border-r border-b px-3 py-2 text-right align-top whitespace-nowrap font-mono text-[0.7rem] text-foreground tabular-nums select-text">
+                              {r.viewCount || "-"}
+                            </td>
+                            <td className="border-b px-3 py-2 align-top whitespace-pre-wrap text-[0.7rem] text-muted-foreground select-text">
+                              {r.keywords || "-"}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
