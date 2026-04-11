@@ -15,6 +15,7 @@ import { readJob, type ScrapeStatus } from "@/lib/jobs";
 import { loadSections } from "@/lib/sections";
 import { buildSectionViews } from "@/lib/worksheet";
 import type { ScrapedPlace } from "@/lib/scraper/types";
+import { ExcelDownloadButton } from "@/components/excel-download-button";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -206,28 +207,88 @@ export default async function AdminJobDetailPage({ params }: PageProps) {
         )}
 
         {/* AI Canvas에서 넘어온 리뷰 데이터 패널 */}
-        {reviews ? (
-          <Card>
-            <CardHeader>
-              <CardTitle>AI Canvas 수집 리뷰</CardTitle>
-              <CardDescription>
-                AI Canvas 워크플로우를 통해 생성/수집된 데이터입니다.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <pre className="max-h-60 overflow-auto rounded-md border bg-muted/40 px-4 py-3 text-xs whitespace-pre-wrap break-words">
-                {JSON.stringify(reviews, null, 2)}
-              </pre>
-            </CardContent>
-          </Card>
-        ) : job.placeId ? (
-          <Card>
-            <CardContent className="py-8 text-center text-sm text-muted-foreground">
-              AI Canvas에서 접수된 리뷰(분석) 결과가 없습니다.<br />
-              현재 Place ID: <strong>{job.placeId}</strong>
-            </CardContent>
-          </Card>
-        ) : null}
+        {(() => {
+          // 데이터 전처리: 글자면 파싱하고, 배열이 아니면 배열로 감싸서 무조건 표로 만듦
+          let displayReviews = job.reviewsData;
+          try {
+            if (typeof displayReviews === "string") {
+              displayReviews = JSON.parse(displayReviews);
+            }
+            if (displayReviews && !Array.isArray(displayReviews)) {
+              displayReviews = [displayReviews];
+            }
+          } catch (e) {
+            console.error("Review parsing error:", e);
+          }
+
+          if (
+            !displayReviews ||
+            (Array.isArray(displayReviews) && displayReviews.length === 0)
+          ) {
+            if (!job.placeId) return null;
+            return (
+              <Card>
+                <CardContent className="py-8 text-center text-sm text-muted-foreground">
+                  AI Canvas에서 접수된 리뷰(분석) 결과가 없습니다.
+                  <br />
+                  현재 Place ID: <strong>{job.placeId}</strong>
+                </CardContent>
+              </Card>
+            );
+          }
+
+          return (
+            <Card>
+              <CardHeader className="flex flex-row items-start sm:items-center justify-between pb-4 gap-4">
+                <div className="space-y-1">
+                  <CardTitle>AI Canvas 수집 리뷰 ({displayReviews.length}건)</CardTitle>
+                  <CardDescription>
+                    AI Canvas를 통해 수집된 상세 데이터입니다. 드래그 복사 및 엑셀 저장이 가능합니다.
+                  </CardDescription>
+                </div>
+                <ExcelDownloadButton data={displayReviews} fileName={`${job.placeName || "업체"}_리브데이터.csv`} />
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-md border max-h-[600px] overflow-auto relative">
+                  <table className="w-full text-sm text-left">
+                    <thead className="sticky top-0 bg-secondary/95 backdrop-blur-sm text-muted-foreground text-xs uppercase z-10 border-b">
+                      <tr>
+                        <th className="px-4 py-3 font-semibold whitespace-nowrap">연번</th>
+                        <th className="px-4 py-3 font-semibold w-full min-w-[300px]">리뷰 내용</th>
+                        <th className="px-4 py-3 font-semibold whitespace-nowrap text-center">방문일</th>
+                        <th className="px-4 py-3 font-semibold whitespace-nowrap text-center">작성일</th>
+                        <th className="px-4 py-3 font-semibold whitespace-nowrap text-center">조회수</th>
+                        <th className="px-4 py-3 font-semibold min-w-[150px]">키워드</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {displayReviews.map((r: any, idx: number) => (
+                        <tr key={idx} className="hover:bg-muted/50 transition-colors bg-background group">
+                          <td className="px-4 py-3 text-muted-foreground whitespace-nowrap text-xs">{idx + 1}</td>
+                          <td className="px-4 py-3 font-medium select-text whitespace-pre-wrap leading-relaxed">
+                            {typeof r === 'string' ? r : (r.review || "-")}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-muted-foreground text-center text-xs select-text">
+                            {r.visitedAt || "-"}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-muted-foreground text-center text-xs select-text">
+                            {r.createdAt || "-"}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-muted-foreground text-center text-xs select-text">
+                            {r.viewCount || "-"}
+                          </td>
+                          <td className="px-4 py-3 text-xs text-muted-foreground select-text whitespace-pre-wrap italic">
+                            {r.keywords || "-"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })()}
 
         {sectionViews.length > 0 && (
           <div className="space-y-2 pt-4">

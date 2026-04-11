@@ -1,57 +1,205 @@
-import { updateJob, listJobs } from "@/lib/jobs";
+import crypto from "node:crypto";
+import { readJob, updateJob, listJobs } from "@/lib/jobs";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+function stableStringify(value: unknown): string {
+  if (value === null || typeof value !== "object") {
+    return JSON.stringify(value);
+  }
+  if (Array.isArray(value)) {
+    return "[" + value.map(stableStringify).join(",") + "]";
+  }
+  const keys = Object.keys(value as Record<string, unknown>).sort();
+  return (
+    "{" +
+    keys
+      .map(
+        (k) =>
+          JSON.stringify(k) +
+          ":" +
+          stableStringify((value as Record<string, unknown>)[k]),
+      )
+      .join(",") +
+    "}"
+  );
+}
+
+function contentHash(item: unknown): string {
+  return crypto
+    .createHash("sha1")
+    .update(stableStringify(item))
+    .digest("hex");
+}
+
+function toArray(v: unknown): unknown[] {
+  if (v == null) return [];
+  if (Array.isArray(v)) return v;
+  if (typeof v === "string") {
+    try {
+      const parsed = JSON.parse(v);
+      if (Array.isArray(parsed)) return parsed;
+      return [parsed];
+    } catch {
+      return [v];
+    }
+  }
+  return [v];
+}
+
+async function findJobByPlaceId(placeId: string) {
+  const jobs = await listJobs();
+  return jobs.find(
+    (j) => j.placeId === placeId || j.url.includes(placeId),
+  );
+}
 
 export async function POST(req: Request) {
   try {
-    // URL에서 placeId를 찾습니다 (예: ?placeId=12345)
     const url = new URL(req.url);
     let placeId = url.searchParams.get("placeId");
 
-    // 만약 JSON 방식으로 보냈을 경우를 대비한 하위 호환성 (하지만 에러 날 수 있음)
-    let rawBody = await req.text();
-    let reviewsData: any = rawBody;
-
+    const rawBody = await req.text();
+    let incoming: unknown;
     try {
-      // 1. JSON으로 보냈을 경우 시도
-      const parsed = JSON.parse(rawBody);
-      if (parsed.placeId) placeId = parsed.placeId;
-      if (parsed.reviews) reviewsData = parsed.reviews;
+      incoming = JSON.parse(rawBody);
     } catch {
-      // 2. JSON이 아니거나 깨졌으면 그냥 넘어감 (rawBody 통째로 리뷰로 간주)
-      // 이 경우 placeId는 주소창(?placeId=...)에 무조건 있어야 함
+      incoming = { review: rawBody };
+    }
+
+    // {placeId, reviews} 래퍼 지원
+    if (
+      incoming &&
+      typeof incoming === "object" &&
+      !Array.isArray(incoming)
+    ) {
+      const obj = incoming as Record<string, unknown>;
+      if (!placeId && typeof obj.placeId === "string") {
+        placeId = obj.placeId;
+      }
+      if (obj.reviews !== undefined) {
+        incoming = obj.reviews;
+      }
     }
 
     if (!placeId) {
       return Response.json(
-        { error: "placeId가 필요합니다. 주소 끝에 ?placeId={{변수}} 를 붙여주세요." },
+        {
+          error:
+            "placeId가 필요합니다. 쿼리 파라미터(?placeId=...) 또는 body.placeId로 전달하세요.",
+        },
         { status: 400 },
       );
     }
 
-    const jobs = await listJobs();
-    const relatedJob = jobs.find(
-      (j) => j.placeId === placeId || j.url.includes(placeId as string),
-    );
-
-    if (relatedJob) {
-      await updateJob(relatedJob.id, { reviewsData: reviewsData });
-      return Response.json({
-        ok: true,
-        message: "리뷰 데이터 DB 저장 완료",
-      });
+    const relatedJob = await findJobByPlaceId(placeId);
+    if (!relatedJob) {
+      return Response.json(
+        { error: "제출된 placeId와 일치하는 주문 내역이 없습니다." },
+        { status: 404 },
+      );
     }
 
-    return Response.json(
-      { error: "제출된 placeId와 일치하는 주문 내역이 없습니다." },
-      { status: 404 },
-    );
+    const fullJob = await readJob(relatedJob.id);
+    const rawExisting = toArray(fullJob?.reviewsData);
+    const incomingItems = toArray(incoming);
+
+    // 기존 배열에 과거 누적된 중복이 있으면 정리하면서 적재
+    const seen = new Set<string>();
+    const existing: unknown[] = [];
+    let removedFromExisting = 0;
+    for (const item of rawExisting) {
+      const h = contentHash(item);
+      if (seen.has(h)) {
+        removedFromExisting++;
+        continue;
+      }
+      seen.add(h);
+      existing.push(item);
+    }
+
+    // 새로 들어오는 것도 동일 해시면 skip
+    let added = 0;
+    for (const item of incomingItems) {
+      const h = contentHash(item);
+      if (seen.has(h)) continue;
+      seen.add(h);
+      existing.push(item);
+      added++;
+    }
+
+    await updateJob(relatedJob.id, { reviewsData: existing });
+
+    const diagnostics = {
+      ok: true,
+      jobId: relatedJob.id,
+      placeId,
+      incoming: incomingItems.length,
+      added,
+      duplicates: incomingItems.length - added,
+      removedFromExisting,
+      total: existing.length,
+    };
+    console.log(`[api/reviews POST]`, diagnostics);
+    return Response.json(diagnostics);
   } catch (err) {
-    console.error("[api/reviews] Error processing reviews:", err);
+    console.error("[api/reviews POST] error:", err);
     return Response.json(
-      { error: "서버 처리 중 오류 발생", details: err instanceof Error ? err.message : String(err) }, 
-      { status: 500 }
+      {
+        error: "서버 처리 중 오류 발생",
+        details: err instanceof Error ? err.message : String(err),
+      },
+      { status: 500 },
     );
   }
 }
 
+export async function GET(req: Request) {
+  try {
+    const url = new URL(req.url);
+    const placeId = url.searchParams.get("placeId");
+    const jobId = url.searchParams.get("jobId");
+
+    if (!placeId && !jobId) {
+      return Response.json(
+        { error: "placeId 또는 jobId 쿼리 파라미터가 필요합니다." },
+        { status: 400 },
+      );
+    }
+
+    let job = null;
+    if (jobId) {
+      job = await readJob(jobId);
+    } else if (placeId) {
+      const found = await findJobByPlaceId(placeId);
+      if (found) job = await readJob(found.id);
+    }
+
+    if (!job) {
+      return Response.json(
+        { error: "일치하는 job을 찾을 수 없습니다." },
+        { status: 404 },
+      );
+    }
+
+    const reviews = toArray(job.reviewsData);
+    return Response.json({
+      jobId: job.id,
+      placeId: job.placeId,
+      placeName: job.placeName,
+      count: reviews.length,
+      reviews,
+    });
+  } catch (err) {
+    console.error("[api/reviews GET] error:", err);
+    return Response.json(
+      {
+        error: "서버 처리 중 오류 발생",
+        details: err instanceof Error ? err.message : String(err),
+      },
+      { status: 500 },
+    );
+  }
+}
