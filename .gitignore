@@ -61,3 +61,6 @@ next-env.d.ts
 .vscode/
 .idea/
 *.swp
+
+# local probe outputs
+/data/probe/

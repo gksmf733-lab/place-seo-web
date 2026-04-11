@@ -1,3 +1,4 @@
+
 import { supabase } from "./supabase";
 import crypto from "node:crypto";
 
@@ -20,8 +21,64 @@ export type SavedJob = OrderInput & {
   scrapeFinishedAt?: string;
   scrapedData?: any;
   reviewsData?: any;
+  reviewAnalysis?: ReviewAnalysis | null;
+  reviewIntro?: ReviewIntro | null;
+  ownerIntro?: OwnerIntro | null;
   worksheetMarkdown?: string;
   canvasPulledAt?: string | null;
+};
+
+export type ReviewAnalysisSentiment = {
+  positive: number;
+  negative: number;
+  neutral: number;
+  score: number;
+  tone: string;
+};
+
+export type ReviewAnalysisKeyword = {
+  word: string;
+  count: number;
+  context: string;
+};
+
+export type ReviewAnalysisPersona = {
+  name: string;
+  ageRange: string;
+  visitPurpose: string;
+  companions: string;
+  preferences: string;
+  description: string;
+};
+
+export type ReviewIntro = {
+  text: string;
+  promptId: string;
+  promptName: string;
+  generatedAt: string;
+  model: string;
+};
+
+export type OwnerIntro = {
+  text: string;
+  guide?: string;
+  generatedAt: string;
+  model: string;
+};
+
+export type ReviewAnalysis = {
+  summary: string;
+  sentiment: ReviewAnalysisSentiment;
+  keywords: ReviewAnalysisKeyword[];
+  strengths: string[];
+  improvements: string[];
+  personas: ReviewAnalysisPersona[];
+  goldenKeywords: string[];
+  meta: {
+    analyzedAt: string;
+    model: string;
+    reviewCount: number;
+  };
 };
 
 export async function saveJob(input: OrderInput): Promise<SavedJob> {
@@ -73,6 +130,9 @@ export async function readJob(id: string): Promise<SavedJob | null> {
     createdAt: data.created_at,
     scrapedData: data.scraped_data,
     reviewsData: data.reviews_data,
+    reviewAnalysis: (data.review_analysis as ReviewAnalysis | null) ?? null,
+    reviewIntro: (data.review_intro as ReviewIntro | null) ?? null,
+    ownerIntro: (data.owner_intro as OwnerIntro | null) ?? null,
     worksheetMarkdown: data.worksheet_markdown,
     canvasPulledAt: data.canvas_pulled_at ?? null,
   };
@@ -90,6 +150,9 @@ export async function updateJob(
   if (patch.scrapeFinishedAt !== undefined) updates.scrape_finished_at = patch.scrapeFinishedAt;
   if (patch.scrapedData !== undefined) updates.scraped_data = patch.scrapedData;
   if (patch.reviewsData !== undefined) updates.reviews_data = patch.reviewsData;
+  if (patch.reviewAnalysis !== undefined) updates.review_analysis = patch.reviewAnalysis;
+  if (patch.reviewIntro !== undefined) updates.review_intro = patch.reviewIntro;
+  if (patch.ownerIntro !== undefined) updates.owner_intro = patch.ownerIntro;
   if (patch.worksheetMarkdown !== undefined) updates.worksheet_markdown = patch.worksheetMarkdown;
   if (patch.canvasPulledAt !== undefined) updates.canvas_pulled_at = patch.canvasPulledAt;
 

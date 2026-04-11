@@ -25,7 +25,7 @@ import type { ScrapedPlace } from "./types";
  *  - process.env.AWS_LAMBDA_FUNCTION_NAME — AWS Lambda
  *  - 그 외 → 로컬 개발 간주
  */
-async function launchBrowser(): Promise<Browser> {
+export async function launchBrowser(): Promise<Browser> {
   const isServerless =
     process.env.VERCEL === "1" ||
     !!process.env.AWS_LAMBDA_FUNCTION_NAME ||

@@ -21,6 +21,10 @@ import { ExcelDownloadButton } from "@/components/excel-download-button";
 import { ReviewsTable } from "@/components/reviews-table";
 import { RescrapeButton } from "@/components/rescrape-button";
 import { PromptPicker } from "@/components/prompt-picker";
+import { ReviewAnalysisPanel } from "@/components/review-analysis-panel";
+import { ReviewIntroPanel } from "@/components/review-intro-panel";
+import { OwnerIntroPanel } from "@/components/owner-intro-panel";
+import { ProbePanel } from "@/components/probe-panel";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -423,6 +427,8 @@ export default async function AdminJobDetailPage({
           </Card>
         )}
 
+        <ProbePanel placeId={job.placeId || scraped?.placeId || null} />
+
         {/* AI Canvas에서 넘어온 리뷰 데이터 패널 */}
         {(() => {
           // 데이터 전처리: 글자면 파싱하고, 배열이 아니면 배열로 감싸서 무조건 표로 만듦
@@ -474,6 +480,46 @@ export default async function AdminJobDetailPage({
                 <ReviewsTable reviews={displayReviews} />
               </CardContent>
             </Card>
+          );
+        })()}
+
+        {(() => {
+          const reviewsArr = (() => {
+            let r = job.reviewsData;
+            try {
+              if (typeof r === "string") r = JSON.parse(r);
+              if (r && !Array.isArray(r)) r = [r];
+            } catch {}
+            return Array.isArray(r) ? r : [];
+          })();
+          if (reviewsArr.length === 0) return null;
+          return (
+            <>
+              <ReviewAnalysisPanel
+                jobId={job.id}
+                reviewCount={reviewsArr.length}
+                initialAnalysis={job.reviewAnalysis ?? null}
+              />
+              <ReviewIntroPanel
+                jobId={job.id}
+                hasAnalysis={!!job.reviewAnalysis}
+                prompts={allPrompts
+                  .filter((p) => p.sectionType === "review_intro")
+                  .map((p) => ({
+                    id: p.id,
+                    name: p.name,
+                    description: p.description,
+                    guide: p.guide,
+                    isDefault: p.isDefault,
+                  }))}
+                initialIntro={job.reviewIntro ?? null}
+              />
+              <OwnerIntroPanel
+                jobId={job.id}
+                hasAnalysis={!!job.reviewAnalysis}
+                initialIntro={job.ownerIntro ?? null}
+              />
+            </>
           );
         })()}
 
