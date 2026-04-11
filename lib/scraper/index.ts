@@ -1,4 +1,4 @@
-import { chromium, type Page } from "playwright";
+import type { Browser, Page } from "playwright-core";
 
 import { PLACE_ID_PATTERN } from "./constants";
 import {
@@ -15,6 +15,39 @@ import {
 } from "./extract";
 import { extractMenuItems } from "./menu";
 import type { ScrapedPlace } from "./types";
+
+/**
+ * Vercel 서버리스(또는 AWS Lambda) 환경에서는 @sparticuz/chromium 번들,
+ * 그 외(로컬 개발)에서는 로컬에 설치된 playwright 번들 Chromium 사용.
+ *
+ * 환경 감지:
+ *  - process.env.VERCEL === "1"  — Vercel 서버리스 런타임
+ *  - process.env.AWS_LAMBDA_FUNCTION_NAME — AWS Lambda
+ *  - 그 외 → 로컬 개발 간주
+ */
+async function launchBrowser(): Promise<Browser> {
+  const isServerless =
+    process.env.VERCEL === "1" ||
+    !!process.env.AWS_LAMBDA_FUNCTION_NAME ||
+    process.env.NODE_ENV === "production";
+
+  if (isServerless) {
+    const [{ chromium: playwrightChromium }, sparticuzMod] = await Promise.all([
+      import("playwright-core"),
+      import("@sparticuz/chromium"),
+    ]);
+    const chromiumLib = sparticuzMod.default ?? sparticuzMod;
+    return playwrightChromium.launch({
+      args: chromiumLib.args,
+      executablePath: await chromiumLib.executablePath(),
+      headless: true,
+    });
+  }
+
+  // 로컬 개발: playwright(일반) 패키지가 devDependencies로 있어야 함
+  const { chromium } = await import("playwright");
+  return chromium.launch({ headless: true });
+}
 
 export function extractPlaceId(url: string): string {
   const m = url.match(PLACE_ID_PATTERN);
@@ -117,7 +150,7 @@ export async function scrapePlace(inputUrl: string): Promise<ScrapedPlace> {
     errors: [],
   };
 
-  const browser = await chromium.launch({ headless: true });
+  const browser = await launchBrowser();
   try {
     const context = await browser.newContext({
       userAgent:
