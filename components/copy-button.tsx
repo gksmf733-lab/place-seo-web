@@ -6,21 +6,26 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
 type CopyButtonProps = {
-  text: string;
+  text?: string;
+  value?: string;
   label?: string;
   copiedLabel?: string;
+  iconOnly?: boolean;
 };
 
 export function CopyButton({
   text,
-  label = "프롬프트 복사",
+  value,
+  label = "복사",
   copiedLabel = "복사됨",
+  iconOnly = false,
 }: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
+  const payload = text ?? value ?? "";
 
   async function onCopy() {
     try {
-      await navigator.clipboard.writeText(text);
+      await navigator.clipboard.writeText(payload);
       setCopied(true);
       toast.success("복사되었습니다");
       setTimeout(() => setCopied(false), 1500);
@@ -33,9 +38,10 @@ export function CopyButton({
     <Button
       type="button"
       variant="outline"
-      size="sm"
+      size={iconOnly ? "icon-xs" : "sm"}
       onClick={onCopy}
       aria-live="polite"
+      aria-label={iconOnly ? (copied ? copiedLabel : label) : undefined}
     >
       {copied ? copiedLabel : label}
     </Button>

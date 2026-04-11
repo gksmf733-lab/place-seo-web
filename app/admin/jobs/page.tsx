@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -52,11 +53,20 @@ export default async function AdminJobsPage() {
   return (
     <main className="flex flex-1 flex-col px-6 py-12">
       <div className="mx-auto w-full max-w-5xl space-y-6">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight">접수 목록</h1>
-          <p className="text-sm text-muted-foreground">
-            총 {jobs.length}건 · 최신순
-          </p>
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold tracking-tight">접수 목록</h1>
+            <p className="text-sm text-muted-foreground">
+              총 {jobs.length}건 · 최신순
+            </p>
+          </div>
+          <Button
+            render={<Link href="/admin/prompts" />}
+            variant="outline"
+            size="sm"
+          >
+            프롬프트 관리
+          </Button>
         </div>
 
         {jobs.length === 0 ? (
