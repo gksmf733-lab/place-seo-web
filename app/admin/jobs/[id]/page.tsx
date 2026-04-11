@@ -151,6 +151,15 @@ export default async function AdminJobDetailPage({
   return (
     <main className="flex flex-1 flex-col px-6 py-12">
       <div className="mx-auto w-full max-w-4xl space-y-6">
+        <Button
+          render={<Link href="/admin/jobs" />}
+          variant="outline"
+          size="sm"
+          className="self-start"
+        >
+          ← 접수 목록으로
+        </Button>
+
         <div className="flex items-center justify-between gap-4">
           <div className="space-y-1">
             <h1 className="text-2xl font-bold tracking-tight">
