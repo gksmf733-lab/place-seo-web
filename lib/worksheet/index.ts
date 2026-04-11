@@ -14,11 +14,12 @@ function orMissing(v: string): string {
 }
 
 export function buildSectionViews(
-  data: ScrapedPlace,
+  data: ScrapedPlace | null,
   sections: readonly Section[],
 ): SectionView[] {
-  const placeBlock = formatPlaceDataBlock(data);
-  const rawExcerpt = data.rawText || "(원문 추출 실패)";
+  const PLACEHOLDER = "(스크래핑 미완료 — 재실행 후 자동 채워짐)";
+  const placeBlock = data ? formatPlaceDataBlock(data) : PLACEHOLDER;
+  const rawExcerpt = data?.rawText || PLACEHOLDER;
   return sections.map((sec, idx) => ({
     order: idx + 1,
     name: sec.name || `섹션 ${idx + 1}`,

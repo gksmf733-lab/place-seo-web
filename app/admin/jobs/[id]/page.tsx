@@ -17,6 +17,7 @@ import { buildSectionViews } from "@/lib/worksheet";
 import type { ScrapedPlace } from "@/lib/scraper/types";
 import { ExcelDownloadButton } from "@/components/excel-download-button";
 import { ReviewsTable } from "@/components/reviews-table";
+import { RescrapeButton } from "@/components/rescrape-button";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -67,27 +68,28 @@ export default async function AdminJobDetailPage({ params }: PageProps) {
   if (!job) notFound();
 
   const scraped = job.scrapedData as ScrapedPlace | null;
-  const reviews = job.reviewsData; // AI Canvas에서 받아온 리뷰 데이터
-  
-  const sections = scraped ? await loadSections() : [];
-  const sectionViews =
-    scraped && sections.length > 0
-      ? buildSectionViews(scraped, sections)
-      : [];
+
+  // 섹션 템플릿은 scrape 상태 무관하게 항상 로드해서 렌더한다.
+  // scraped가 null이면 buildSectionViews가 placeholder 문자열로 치환한다.
+  const sections = await loadSections();
+  const sectionViews = buildSectionViews(scraped, sections);
 
   return (
     <main className="flex flex-1 flex-col px-6 py-12">
       <div className="mx-auto w-full max-w-4xl space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4">
           <div className="space-y-1">
             <h1 className="text-2xl font-bold tracking-tight">
               {job.placeName}
             </h1>
             <p className="font-mono text-xs text-muted-foreground">#{job.id}</p>
           </div>
-          <Badge variant={STATUS_VARIANT[job.scrapeStatus]}>
-            {STATUS_LABEL[job.scrapeStatus]}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <RescrapeButton jobId={job.id} />
+            <Badge variant={STATUS_VARIANT[job.scrapeStatus]}>
+              {STATUS_LABEL[job.scrapeStatus]}
+            </Badge>
+          </div>
         </div>
 
         <Card>
@@ -262,6 +264,13 @@ export default async function AdminJobDetailPage({ params }: PageProps) {
             <p className="text-sm text-muted-foreground">
               각 프롬프트를 복사해서 Antigravity / Claude 채팅창에 붙여넣으세요.
             </p>
+            {!scraped && (
+              <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+                ⚠ 스크래핑 결과가 없어 프롬프트에 실제 데이터 대신 placeholder가
+                들어가 있습니다. 상단 <strong>&quot;스크래핑 재실행&quot;</strong>{" "}
+                버튼으로 다시 시도해 주세요.
+              </div>
+            )}
           </div>
         )}
 
