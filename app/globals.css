@@ -131,3 +131,19 @@
     @apply font-sans;
   }
 }
+
+/* ── Naver Place 관리자 컬러 토큰 ── */
+:root {
+  --naver-green: #03C75A;
+  --naver-green-dark: #009639;
+  --naver-green-light: #E8F7EE;
+  --naver-green-50: #F0FBF4;
+  --naver-gray-50: #F8F9FA;
+  --naver-gray-100: #F1F3F5;
+  --naver-gray-200: #E9ECEF;
+  --naver-gray-500: #767676;
+  --naver-gray-900: #1A1A1A;
+  --naver-blue: #1E6BFA;
+  --naver-amber: #FF9900;
+  --naver-red: #FF3B3B;
+}

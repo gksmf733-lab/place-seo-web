@@ -149,8 +149,9 @@ export default async function AdminJobDetailPage({
   const sectionViews = buildSectionViews(scraped, sections);
 
   return (
-    <main className="flex flex-1 flex-col px-6 py-12">
-      <div className="mx-auto w-full max-w-4xl space-y-6">
+    <main className="flex flex-1 flex-col bg-[var(--naver-gray-50)] px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-4xl space-y-5">
+        {/* ── 네비게이션 ── */}
         <Button
           render={<Link href="/admin/jobs" />}
           variant="outline"
@@ -160,75 +161,57 @@ export default async function AdminJobDetailPage({
           ← 접수 목록으로
         </Button>
 
-        <div className="flex items-center justify-between gap-4">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-bold tracking-tight">
-              {job.placeName}
-            </h1>
-            <p className="font-mono text-xs text-muted-foreground">#{job.id}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <RescrapeButton jobId={job.id} />
-            <Badge variant={STATUS_VARIANT[job.scrapeStatus]}>
-              {STATUS_LABEL[job.scrapeStatus]}
-            </Badge>
+        {/* ── 업체 헤더 ── */}
+        <div
+          className="overflow-hidden rounded-xl shadow-sm ring-1 ring-[var(--naver-gray-200)]"
+          style={{ borderTop: "3px solid var(--naver-green)" }}
+        >
+          <div className="bg-white px-6 py-5">
+            <div className="flex items-center justify-between gap-4">
+              <div className="space-y-1">
+                <h1
+                  className="text-xl font-bold tracking-tight"
+                  style={{ color: "var(--naver-gray-900)" }}
+                >
+                  {job.placeName}
+                </h1>
+                <p className="font-mono text-xs" style={{ color: "var(--naver-gray-500)" }}>
+                  #{job.id}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <RescrapeButton jobId={job.id} />
+                <Badge variant={STATUS_VARIANT[job.scrapeStatus]}>
+                  {STATUS_LABEL[job.scrapeStatus]}
+                </Badge>
+              </div>
+            </div>
           </div>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>접수 정보</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div className="grid grid-cols-[8rem_1fr] gap-y-2">
-              <span className="text-muted-foreground">접수 시각</span>
-              <span>{formatDate(job.createdAt)}</span>
-              <span className="text-muted-foreground">URL</span>
-              <span className="break-all">{job.url}</span>
-              <span className="text-muted-foreground">연락처</span>
-              <span>{job.contact}</span>
-              {job.memo && (
-                <>
-                  <span className="text-muted-foreground">메모</span>
-                  <span className="whitespace-pre-wrap">{job.memo}</span>
-                </>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        {/* ── 접수 정보 + 스크래핑 상태 — 2열 ── */}
+        <div className="grid gap-4 md:grid-cols-2">
+          <SectionCard title="접수 정보" accentColor="var(--naver-green)">
+            <InfoGrid>
+              <InfoRow label="접수 시각" value={formatDate(job.createdAt)} />
+              <InfoRow label="URL" value={job.url} breakAll />
+              <InfoRow label="연락처" value={job.contact} />
+              {job.memo && <InfoRow label="메모" value={job.memo} preWrap />}
+            </InfoGrid>
+          </SectionCard>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>스크래핑(DB 저장) 상태</CardTitle>
-            <CardDescription>
-              정보 추출 및 데이터베이스 저장 상태입니다.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div className="grid grid-cols-[8rem_1fr] gap-y-2">
-              <span className="text-muted-foreground">상태</span>
-              <span>{STATUS_LABEL[job.scrapeStatus]}</span>
-              <span className="text-muted-foreground">시작</span>
-              <span>{formatDate(job.scrapeStartedAt)}</span>
-              <span className="text-muted-foreground">완료</span>
-              <span>{formatDate(job.scrapeFinishedAt)}</span>
-              {job.placeId && (
-                <>
-                  <span className="text-muted-foreground">Place ID</span>
-                  <span className="font-mono">{job.placeId}</span>
-                </>
-              )}
+          <SectionCard title="스크래핑 상태" accentColor="var(--naver-blue)">
+            <InfoGrid>
+              <InfoRow label="상태" value={STATUS_LABEL[job.scrapeStatus]} />
+              <InfoRow label="시작" value={formatDate(job.scrapeStartedAt)} />
+              <InfoRow label="완료" value={formatDate(job.scrapeFinishedAt)} />
+              {job.placeId && <InfoRow label="Place ID" value={job.placeId} mono />}
               {job.scrapeError && (
-                <>
-                  <span className="text-muted-foreground">오류</span>
-                  <span className="text-destructive break-all">
-                    {job.scrapeError}
-                  </span>
-                </>
+                <InfoRow label="오류" value={job.scrapeError} error />
               )}
-            </div>
-          </CardContent>
-        </Card>
+            </InfoGrid>
+          </SectionCard>
+        </div>
 
         <Card>
           <CardHeader>
@@ -338,102 +321,93 @@ export default async function AdminJobDetailPage({
         </Card>
 
         {scraped ? (
-          <Card>
-            <CardHeader>
-              <CardTitle>추출된 플레이스 정보</CardTitle>
-              <CardDescription>
-                섹션 프롬프트 작성의 기반이 되는 데이터입니다.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              <div className="grid grid-cols-[8rem_1fr] gap-y-2">
-                <span className="text-muted-foreground">Place ID</span>
-                <span className="font-mono flex items-center gap-2">
+          <SectionCard title="추출된 플레이스 정보" accentColor="var(--naver-green)">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-0.5 rounded-lg p-3" style={{ backgroundColor: "var(--naver-green-50)" }}>
+                <p className="text-[0.65rem] font-semibold" style={{ color: "var(--naver-green-dark)" }}>업체명</p>
+                <p className="text-sm font-bold" style={{ color: "var(--naver-gray-900)" }}>{scraped.name || "-"}</p>
+              </div>
+              <div className="space-y-0.5 rounded-lg p-3" style={{ backgroundColor: "var(--naver-green-50)" }}>
+                <p className="text-[0.65rem] font-semibold" style={{ color: "var(--naver-green-dark)" }}>카테고리</p>
+                <p className="text-sm font-bold" style={{ color: "var(--naver-gray-900)" }}>{scraped.category || "-"}</p>
+              </div>
+              <div className="space-y-0.5 rounded-lg p-3" style={{ backgroundColor: "var(--naver-green-50)" }}>
+                <p className="text-[0.65rem] font-semibold" style={{ color: "var(--naver-green-dark)" }}>별점/리뷰</p>
+                <p className="text-sm font-bold" style={{ color: "var(--naver-gray-900)" }}>{formatRating(scraped) || "-"}</p>
+              </div>
+              <div className="space-y-0.5 rounded-lg p-3" style={{ backgroundColor: "var(--naver-green-50)" }}>
+                <p className="text-[0.65rem] font-semibold" style={{ color: "var(--naver-green-dark)" }}>전화</p>
+                <p className="text-sm font-bold" style={{ color: "var(--naver-gray-900)" }}>{scraped.phone || "-"}</p>
+              </div>
+            </div>
+
+            <div className="mt-4 divide-y rounded-lg ring-1 ring-[var(--naver-gray-200)]">
+              <PlaceInfoRow label="Place ID" mono>
+                <span className="flex items-center gap-2">
                   {scraped.placeId || job.placeId || "-"}
                   {(scraped.placeId || job.placeId) && (
-                    <CopyButton
-                      text={scraped.placeId || job.placeId || ""}
-                      label="ID 복사"
-                    />
+                    <CopyButton text={scraped.placeId || job.placeId || ""} label="ID 복사" />
                   )}
                 </span>
-                <span className="text-muted-foreground">플레이스 URL</span>
-                <span className="break-all flex items-start gap-2">
+              </PlaceInfoRow>
+              <PlaceInfoRow label="플레이스 URL">
+                <span className="flex items-start gap-2 break-all">
                   <a
                     href={scraped.inputUrl || job.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="underline underline-offset-2 hover:text-primary"
+                    className="underline underline-offset-2"
+                    style={{ color: "var(--naver-green-dark)" }}
                   >
                     {scraped.inputUrl || job.url}
                   </a>
                   <CopyButton text={scraped.inputUrl || job.url} label="URL 복사" />
                 </span>
-                {scraped.scrapedUrl && scraped.scrapedUrl !== (scraped.inputUrl || job.url) && (
-                  <>
-                    <span className="text-muted-foreground">스크래핑 URL</span>
-                    <span className="break-all">
-                      <a
-                        href={scraped.scrapedUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="underline underline-offset-2 hover:text-primary"
-                      >
-                        {scraped.scrapedUrl}
-                      </a>
-                    </span>
-                  </>
-                )}
-                <span className="text-muted-foreground">업체명</span>
-                <span>{scraped.name || "-"}</span>
-                <span className="text-muted-foreground">카테고리</span>
-                <span>{scraped.category || "-"}</span>
-                <span className="text-muted-foreground">주소</span>
-                <span>{scraped.address || "-"}</span>
-                <span className="text-muted-foreground">전화</span>
-                <span>{scraped.phone || "-"}</span>
-                <span className="text-muted-foreground">영업시간</span>
-                <span>{scraped.hours || "-"}</span>
-                <span className="text-muted-foreground">홈페이지</span>
+              </PlaceInfoRow>
+              <PlaceInfoRow label="주소">{scraped.address || "-"}</PlaceInfoRow>
+              <PlaceInfoRow label="영업시간">{scraped.hours || "-"}</PlaceInfoRow>
+              <PlaceInfoRow label="홈페이지">
                 <span className="break-all">{scraped.homepage || "-"}</span>
-                <span className="text-muted-foreground">편의시설</span>
-                <span>{scraped.amenities || "-"}</span>
-                <span className="text-muted-foreground">별점/리뷰</span>
-                <span>{formatRating(scraped) || "-"}</span>
-                {scraped.description && (
-                  <>
-                    <span className="text-muted-foreground">AI 브리핑</span>
-                    <span className="whitespace-pre-wrap">
-                      {scraped.description}
-                    </span>
-                  </>
-                )}
-              </div>
-
-              {scraped.menuItems && scraped.menuItems.length > 0 && (
-                <div className="pt-2">
-                  <p className="text-muted-foreground mb-2">메뉴</p>
-                  <ul className="list-disc space-y-0.5 pl-5">
-                    {scraped.menuItems.map((m) => (
-                      <li key={m}>{m}</li>
-                    ))}
-                  </ul>
-                </div>
+              </PlaceInfoRow>
+              <PlaceInfoRow label="편의시설">{scraped.amenities || "-"}</PlaceInfoRow>
+              {scraped.description && (
+                <PlaceInfoRow label="AI 브리핑">
+                  <span className="whitespace-pre-wrap">{scraped.description}</span>
+                </PlaceInfoRow>
               )}
-            </CardContent>
-          </Card>
+            </div>
+
+            {scraped.menuItems && scraped.menuItems.length > 0 && (
+              <div className="mt-4">
+                <p className="mb-2 text-xs font-semibold" style={{ color: "var(--naver-green-dark)" }}>
+                  메뉴 ({scraped.menuItems.length}건)
+                </p>
+                <div className="grid gap-1.5 sm:grid-cols-2">
+                  {scraped.menuItems.map((m) => (
+                    <div
+                      key={m}
+                      className="rounded-md px-3 py-2 text-xs ring-1 ring-[var(--naver-gray-200)]"
+                      style={{ backgroundColor: "var(--naver-gray-50)" }}
+                    >
+                      {m}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </SectionCard>
         ) : job.scrapeStatus === "done" ? (
-          <Card>
-            <CardContent className="py-8 text-center text-sm text-muted-foreground">
+          <SectionCard title="플레이스 정보" accentColor="var(--naver-gray-500)">
+            <p className="py-6 text-center text-sm" style={{ color: "var(--naver-gray-500)" }}>
               DB에 스크래핑된 상세 정보가 없습니다.
-            </CardContent>
-          </Card>
+            </p>
+          </SectionCard>
         ) : (
-          <Card>
-            <CardContent className="py-8 text-center text-sm text-muted-foreground">
+          <SectionCard title="플레이스 정보" accentColor="var(--naver-gray-500)">
+            <p className="py-6 text-center text-sm" style={{ color: "var(--naver-gray-500)" }}>
               작업지 생성 대기 중입니다. 잠시 후 새로고침해 주세요.
-            </CardContent>
-          </Card>
+            </p>
+          </SectionCard>
         )}
 
         <ProbePanel placeId={job.placeId || scraped?.placeId || null} />
@@ -625,5 +599,99 @@ export default async function AdminJobDetailPage({
         </div>
       </div>
     </main>
+  );
+}
+
+/* ── 헬퍼 서버 컴포넌트들 ── */
+
+function SectionCard({
+  title,
+  accentColor,
+  children,
+}: {
+  title: string;
+  accentColor: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-[var(--naver-gray-200)]"
+      style={{ borderLeft: `3px solid ${accentColor}` }}
+    >
+      <div className="border-b px-5 py-3" style={{ borderColor: "var(--naver-gray-200)" }}>
+        <h3 className="text-sm font-bold" style={{ color: "var(--naver-gray-900)" }}>
+          {title}
+        </h3>
+      </div>
+      <div className="px-5 py-4 text-sm">{children}</div>
+    </div>
+  );
+}
+
+function InfoGrid({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="divide-y rounded-lg ring-1 ring-[var(--naver-gray-200)]">
+      {children}
+    </div>
+  );
+}
+
+function InfoRow({
+  label,
+  value,
+  breakAll,
+  preWrap,
+  mono,
+  error,
+}: {
+  label: string;
+  value: string;
+  breakAll?: boolean;
+  preWrap?: boolean;
+  mono?: boolean;
+  error?: boolean;
+}) {
+  return (
+    <div className="flex gap-3 px-4 py-2.5 text-[0.8rem]">
+      <span
+        className="w-20 shrink-0 font-semibold"
+        style={{ color: "var(--naver-gray-500)" }}
+      >
+        {label}
+      </span>
+      <span
+        className={`flex-1 ${breakAll ? "break-all" : ""} ${preWrap ? "whitespace-pre-wrap" : ""} ${mono ? "font-mono" : ""}`}
+        style={{ color: error ? "var(--naver-red)" : "var(--naver-gray-900)" }}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function PlaceInfoRow({
+  label,
+  children,
+  mono,
+}: {
+  label: string;
+  children: React.ReactNode;
+  mono?: boolean;
+}) {
+  return (
+    <div className="flex gap-3 px-4 py-2.5 text-[0.8rem]">
+      <span
+        className="w-24 shrink-0 font-semibold"
+        style={{ color: "var(--naver-gray-500)" }}
+      >
+        {label}
+      </span>
+      <span
+        className={`flex-1 ${mono ? "font-mono" : ""}`}
+        style={{ color: "var(--naver-gray-900)" }}
+      >
+        {children}
+      </span>
+    </div>
   );
 }
