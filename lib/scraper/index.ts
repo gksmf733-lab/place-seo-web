@@ -13,8 +13,8 @@ import {
   extractNameCategory,
   extractAiBrief,
 } from "./extract";
-import { extractMenuItems } from "./menu";
-import type { ScrapedPlace } from "./types";
+import { extractMenuItems, extractMenuItemsV2 } from "./menu";
+import type { ScrapedPlace, MenuItem } from "./types";
 
 /**
  * Vercel 서버리스(또는 AWS Lambda) 환경에서는 @sparticuz/chromium 번들,
@@ -197,9 +197,12 @@ export async function scrapePlace(inputUrl: string): Promise<ScrapedPlace> {
       await page.waitForTimeout(1500);
       await loadAllMenuItems(page);
       const menuBody = await page.locator("body").innerText({ timeout: 8000 });
-      const fullMenu = extractMenuItems(nonEmptyLines(menuBody));
+      const menuLines = nonEmptyLines(menuBody);
+      const fullMenu = extractMenuItems(menuLines);
+      const fullMenuV2 = extractMenuItemsV2(menuLines);
       if (fullMenu.length > data.menuItems.length) {
         data.menuItems = fullMenu;
+        data.menuItemsV2 = fullMenuV2;
       }
     } catch (exc) {
       data.errors.push(
@@ -218,4 +221,4 @@ function errorMessage(err: unknown): string {
   return String(err);
 }
 
-export type { ScrapedPlace } from "./types";
+export type { ScrapedPlace, MenuItem } from "./types";

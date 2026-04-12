@@ -1,3 +1,9 @@
+export type MenuItem = {
+  name: string;
+  price: string;
+  description?: string;
+};
+
 export type ScrapedPlace = {
   placeId: string;
   inputUrl: string;
@@ -14,6 +20,7 @@ export type ScrapedPlace = {
   blogReviews: string;
   description: string;
   menuItems: string[];
+  menuItemsV2?: MenuItem[];
   rawText: string;
   errors: string[];
 };

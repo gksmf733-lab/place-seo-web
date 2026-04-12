@@ -16,7 +16,7 @@ import { readJob, type ScrapeStatus } from "@/lib/jobs";
 import { listPrompts, type Prompt } from "@/lib/prompts";
 import { buildSectionViews } from "@/lib/worksheet";
 import type { Section } from "@/lib/sections";
-import type { ScrapedPlace } from "@/lib/scraper/types";
+import type { ScrapedPlace, MenuItem } from "@/lib/scraper/types";
 import { ExcelDownloadButton } from "@/components/excel-download-button";
 import { ReviewsTable } from "@/components/reviews-table";
 import { RescrapeButton } from "@/components/rescrape-button";
@@ -377,24 +377,62 @@ export default async function AdminJobDetailPage({
               )}
             </div>
 
-            {scraped.menuItems && scraped.menuItems.length > 0 && (
-              <div className="mt-4">
-                <p className="mb-2 text-xs font-semibold" style={{ color: "var(--naver-green-dark)" }}>
-                  메뉴 ({scraped.menuItems.length}건)
-                </p>
-                <div className="grid gap-1.5 sm:grid-cols-2">
-                  {scraped.menuItems.map((m) => (
-                    <div
-                      key={m}
-                      className="rounded-md px-3 py-2 text-xs ring-1 ring-[var(--naver-gray-200)]"
-                      style={{ backgroundColor: "var(--naver-gray-50)" }}
-                    >
-                      {m}
+            {(() => {
+              const v2 = (scraped as ScrapedPlace & { menuItemsV2?: MenuItem[] }).menuItemsV2;
+              const items = v2 && v2.length > 0 ? v2 : null;
+              const legacy = scraped.menuItems;
+
+              if (items) {
+                return (
+                  <div className="mt-4">
+                    <p className="mb-2 text-xs font-semibold" style={{ color: "var(--naver-green-dark)" }}>
+                      메뉴 ({items.length}건)
+                    </p>
+                    <div className="divide-y rounded-lg ring-1 ring-[var(--naver-gray-200)]">
+                      {items.map((m, i) => (
+                        <div key={i} className="flex items-start gap-3 px-4 py-3">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold" style={{ color: "var(--naver-gray-900)" }}>
+                              {m.name}
+                            </p>
+                            {m.description && (
+                              <p className="mt-0.5 text-xs" style={{ color: "var(--naver-gray-500)" }}>
+                                {m.description}
+                              </p>
+                            )}
+                          </div>
+                          <span
+                            className="shrink-0 rounded-md px-2 py-1 text-xs font-bold"
+                            style={{ backgroundColor: "var(--naver-green-50)", color: "var(--naver-green-dark)" }}
+                          >
+                            {m.price}
+                          </span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
+                  </div>
+                );
+              }
+
+              if (legacy && legacy.length > 0) {
+                return (
+                  <div className="mt-4">
+                    <p className="mb-2 text-xs font-semibold" style={{ color: "var(--naver-green-dark)" }}>
+                      메뉴 ({legacy.length}건)
+                    </p>
+                    <div className="divide-y rounded-lg ring-1 ring-[var(--naver-gray-200)]">
+                      {legacy.map((m, i) => (
+                        <div key={i} className="px-4 py-2.5 text-sm" style={{ color: "var(--naver-gray-900)" }}>
+                          {m}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              }
+
+              return null;
+            })()}
           </SectionCard>
         ) : job.scrapeStatus === "done" ? (
           <SectionCard title="플레이스 정보" accentColor="var(--naver-gray-500)">

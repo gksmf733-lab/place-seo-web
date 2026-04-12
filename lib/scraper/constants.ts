@@ -36,3 +36,6 @@ export const MENU_NAME_HARD_CAP = 35;
 export const MENU_NAME_EXCLUDE = [
   "쿠폰", "주소", "리뷰", "블로그", "이미지로 보기", "가격표", "사진",
 ] as const;
+
+// 전화번호·가상번호 패턴 — 메뉴명 후보에서 제외
+export const PHONE_LIKE_PATTERN = /^[\d][\d\-]{7,}$/;
