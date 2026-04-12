@@ -28,11 +28,12 @@ type ProbeResult = {
 
 type Props = {
   placeId: string | null;
+  initialData: ProbeResult | null;
 };
 
-export function ProbePanel({ placeId }: Props) {
+export function ProbePanel({ placeId, initialData }: Props) {
   const [running, setRunning] = useState(false);
-  const [result, setResult] = useState<ProbeResult | null>(null);
+  const [result, setResult] = useState<ProbeResult | null>(initialData);
 
   async function onClick() {
     if (!placeId) {
@@ -80,7 +81,7 @@ export function ProbePanel({ placeId }: Props) {
           onClick={onClick}
           disabled={running || !placeId}
         >
-          {running ? "확인 중..." : "부가서비스 확인"}
+          {running ? "확인 중..." : result ? "재확인" : "부가서비스 확인"}
         </Button>
       </CardHeader>
       {result && (

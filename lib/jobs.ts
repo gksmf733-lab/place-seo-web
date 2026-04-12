@@ -25,6 +25,7 @@ export type SavedJob = OrderInput & {
   reviewIntro?: ReviewIntro | null;
   ownerIntro?: OwnerIntro | null;
   menuEvaluation?: MenuEvaluation | null;
+  probeData?: any | null;
   worksheetMarkdown?: string;
   canvasPulledAt?: string | null;
 };
@@ -166,6 +167,7 @@ export async function readJob(id: string): Promise<SavedJob | null> {
     reviewIntro: (data.review_intro as ReviewIntro | null) ?? null,
     ownerIntro: (data.owner_intro as OwnerIntro | null) ?? null,
     menuEvaluation: (data.menu_evaluation as MenuEvaluation | null) ?? null,
+    probeData: data.probe_data ?? null,
     worksheetMarkdown: data.worksheet_markdown,
     canvasPulledAt: data.canvas_pulled_at ?? null,
   };
@@ -187,6 +189,7 @@ export async function updateJob(
   if (patch.reviewIntro !== undefined) updates.review_intro = patch.reviewIntro;
   if (patch.ownerIntro !== undefined) updates.owner_intro = patch.ownerIntro;
   if (patch.menuEvaluation !== undefined) updates.menu_evaluation = patch.menuEvaluation;
+  if (patch.probeData !== undefined) updates.probe_data = patch.probeData;
   if (patch.worksheetMarkdown !== undefined) updates.worksheet_markdown = patch.worksheetMarkdown;
   if (patch.canvasPulledAt !== undefined) updates.canvas_pulled_at = patch.canvasPulledAt;
 

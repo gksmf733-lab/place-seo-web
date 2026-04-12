@@ -424,7 +424,10 @@ export default async function AdminJobDetailPage({
           return null;
         })()}
 
-        <ProbePanel placeId={job.placeId || scraped?.placeId || null} />
+        <ProbePanel
+          placeId={job.placeId || scraped?.placeId || null}
+          initialData={job.probeData ?? null}
+        />
 
         {/* AI Canvas에서 넘어온 리뷰 데이터 패널 */}
         {(() => {
