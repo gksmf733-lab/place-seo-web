@@ -73,10 +73,23 @@ export type MenuEvalItem = {
   weaknesses: string[];
   needsImprovement: boolean;
   improvementSuggestion: string;
+  reviewSummary: string;
+};
+
+export type MenuOverallAnalysis = {
+  totalRating: string;
+  totalReviewCount: number;
+  commonKeywords: string[];
+  bestMenu: string;
+  bestMenuReason: string;
+  worstMenu: string;
+  worstMenuReason: string;
+  expertComment: string;
 };
 
 export type MenuEvaluation = {
   items: MenuEvalItem[];
+  overall: MenuOverallAnalysis;
   meta: {
     analyzedAt: string;
     model: string;
