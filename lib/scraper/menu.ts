@@ -16,6 +16,10 @@ function isNoiseLine(line: string): boolean {
   if (PRICE_PATTERN.test(line)) return true;
   if (line === "변동") return true;
   if (line.length < 2) return true;
+  // 프로모/슬로건 텍스트 필터 (느낌표·물결표 끝나거나 콤마로 나열된 긴 문장)
+  if (line.endsWith("!") || line.endsWith("~")) return true;
+  if (line.includes("가능한") && line.length > 15) return true;
+  if (line.includes("전화") || line.includes("상담")) return true;
   return false;
 }
 

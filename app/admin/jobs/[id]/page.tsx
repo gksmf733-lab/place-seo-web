@@ -25,6 +25,7 @@ import { ReviewAnalysisPanel } from "@/components/review-analysis-panel";
 import { ReviewIntroPanel } from "@/components/review-intro-panel";
 import { OwnerIntroPanel } from "@/components/owner-intro-panel";
 import { ProbePanel } from "@/components/probe-panel";
+import { MenuEvaluationPanel } from "@/components/menu-evaluation-panel";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -447,6 +448,37 @@ export default async function AdminJobDetailPage({
             </p>
           </SectionCard>
         )}
+
+        {(() => {
+          const v2Menus = (scraped as (ScrapedPlace & { menuItemsV2?: MenuItem[] }) | null)?.menuItemsV2;
+          const menuDisplays = v2Menus && v2Menus.length > 0
+            ? v2Menus.map((m) => ({ name: m.name, price: m.price, description: m.description }))
+            : (scraped?.menuItems ?? []).map((m) => {
+                const parts = m.split(" · ");
+                return { name: parts[0] || m, price: parts[1] || "", description: undefined };
+              });
+
+          if (menuDisplays.length > 0) {
+            const reviewsArr = (() => {
+              let r = job.reviewsData;
+              try {
+                if (typeof r === "string") r = JSON.parse(r);
+                if (r && !Array.isArray(r)) r = [r];
+              } catch {}
+              return Array.isArray(r) ? r : [];
+            })();
+
+            return (
+              <MenuEvaluationPanel
+                jobId={job.id}
+                menus={menuDisplays}
+                hasReviews={reviewsArr.length > 0}
+                initialEvaluation={job.menuEvaluation ?? null}
+              />
+            );
+          }
+          return null;
+        })()}
 
         <ProbePanel placeId={job.placeId || scraped?.placeId || null} />
 

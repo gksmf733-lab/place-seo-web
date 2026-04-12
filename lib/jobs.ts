@@ -24,6 +24,7 @@ export type SavedJob = OrderInput & {
   reviewAnalysis?: ReviewAnalysis | null;
   reviewIntro?: ReviewIntro | null;
   ownerIntro?: OwnerIntro | null;
+  menuEvaluation?: MenuEvaluation | null;
   worksheetMarkdown?: string;
   canvasPulledAt?: string | null;
 };
@@ -64,6 +65,24 @@ export type OwnerIntro = {
   guide?: string;
   generatedAt: string;
   model: string;
+};
+
+export type MenuEvalItem = {
+  menu: string;
+  strengths: string[];
+  weaknesses: string[];
+  needsImprovement: boolean;
+  improvementSuggestion: string;
+};
+
+export type MenuEvaluation = {
+  items: MenuEvalItem[];
+  meta: {
+    analyzedAt: string;
+    model: string;
+    menuCount: number;
+    reviewCount: number;
+  };
 };
 
 export type ReviewAnalysis = {
@@ -133,6 +152,7 @@ export async function readJob(id: string): Promise<SavedJob | null> {
     reviewAnalysis: (data.review_analysis as ReviewAnalysis | null) ?? null,
     reviewIntro: (data.review_intro as ReviewIntro | null) ?? null,
     ownerIntro: (data.owner_intro as OwnerIntro | null) ?? null,
+    menuEvaluation: (data.menu_evaluation as MenuEvaluation | null) ?? null,
     worksheetMarkdown: data.worksheet_markdown,
     canvasPulledAt: data.canvas_pulled_at ?? null,
   };
@@ -153,6 +173,7 @@ export async function updateJob(
   if (patch.reviewAnalysis !== undefined) updates.review_analysis = patch.reviewAnalysis;
   if (patch.reviewIntro !== undefined) updates.review_intro = patch.reviewIntro;
   if (patch.ownerIntro !== undefined) updates.owner_intro = patch.ownerIntro;
+  if (patch.menuEvaluation !== undefined) updates.menu_evaluation = patch.menuEvaluation;
   if (patch.worksheetMarkdown !== undefined) updates.worksheet_markdown = patch.worksheetMarkdown;
   if (patch.canvasPulledAt !== undefined) updates.canvas_pulled_at = patch.canvasPulledAt;
 
