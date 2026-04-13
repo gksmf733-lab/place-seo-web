@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { VerticalBadge } from "@/components/vertical-badge";
 import { listJobs, type ScrapeStatus } from "@/lib/jobs";
 
 export const dynamic = "force-dynamic";
@@ -137,12 +138,20 @@ export default async function AdminJobsPage() {
                   <div className="px-5 py-4">
                     {/* 상단: 업체명 + 상태 */}
                     <div className="flex items-center justify-between gap-3">
-                      <h2
-                        className="truncate text-[0.95rem] font-bold group-hover:text-[var(--naver-green-dark)]"
-                        style={{ color: "var(--naver-gray-900)" }}
-                      >
-                        {job.placeName}
-                      </h2>
+                      <div className="flex min-w-0 items-center gap-2">
+                        <h2
+                          className="truncate text-[0.95rem] font-bold group-hover:text-[var(--naver-green-dark)]"
+                          style={{ color: "var(--naver-gray-900)" }}
+                        >
+                          {job.placeName}
+                        </h2>
+                        {(job.scrapedData as { category?: string } | null)?.category && (
+                          <VerticalBadge
+                            category={(job.scrapedData as { category?: string }).category}
+                            size="sm"
+                          />
+                        )}
+                      </div>
                       <StatusBadge status={job.scrapeStatus} />
                     </div>
 

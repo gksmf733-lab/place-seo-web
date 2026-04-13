@@ -26,6 +26,8 @@ import { ReviewIntroPanel } from "@/components/review-intro-panel";
 import { OwnerIntroPanel } from "@/components/owner-intro-panel";
 import { ProbePanel } from "@/components/probe-panel";
 import { MenuEvaluationPanel } from "@/components/menu-evaluation-panel";
+import { VerticalBadge } from "@/components/vertical-badge";
+import { getVerticalConfig } from "@/lib/verticals";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -135,6 +137,9 @@ export default async function AdminJobDetailPage({
 
   const scraped = job.scrapedData as ScrapedPlace | null;
 
+  // 버티컬 감지 (카테고리 → 식음/뷰티/의료/숙박/교육/피트니스/기타)
+  const verticalConfig = getVerticalConfig(scraped?.category);
+
   // IA CANVAS 커스텀 API 노드에 붙여넣을 절대 URL 계산
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? "";
@@ -170,12 +175,15 @@ export default async function AdminJobDetailPage({
           <div className="bg-white px-6 py-5">
             <div className="flex items-center justify-between gap-4">
               <div className="space-y-1">
-                <h1
-                  className="text-xl font-bold tracking-tight"
-                  style={{ color: "var(--naver-gray-900)" }}
-                >
-                  {job.placeName}
-                </h1>
+                <div className="flex items-center gap-2">
+                  <h1
+                    className="text-xl font-bold tracking-tight"
+                    style={{ color: "var(--naver-gray-900)" }}
+                  >
+                    {job.placeName}
+                  </h1>
+                  {scraped?.category && <VerticalBadge category={scraped.category} />}
+                </div>
                 <p className="font-mono text-xs" style={{ color: "var(--naver-gray-500)" }}>
                   #{job.id}
                 </p>
@@ -418,6 +426,8 @@ export default async function AdminJobDetailPage({
                 menus={menuDisplays}
                 hasReviews={reviewsArr.length > 0}
                 initialEvaluation={job.menuEvaluation ?? null}
+                itemsLabel={verticalConfig.itemsLabel}
+                itemUnit={verticalConfig.itemUnit}
               />
             );
           }
@@ -427,6 +437,7 @@ export default async function AdminJobDetailPage({
         <ProbePanel
           placeId={job.placeId || scraped?.placeId || null}
           initialData={job.probeData ?? null}
+          bookingLabel={verticalConfig.bookingLabel}
         />
 
         {/* AI Canvas에서 넘어온 리뷰 데이터 패널 */}

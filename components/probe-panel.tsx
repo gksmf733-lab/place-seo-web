@@ -29,9 +29,11 @@ type ProbeResult = {
 type Props = {
   placeId: string | null;
   initialData: ProbeResult | null;
+  /** 버티컬에 맞춘 booking 라벨 오버라이드 (예: "시술 예약") */
+  bookingLabel?: string;
 };
 
-export function ProbePanel({ placeId, initialData }: Props) {
+export function ProbePanel({ placeId, initialData, bookingLabel }: Props) {
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<ProbeResult | null>(initialData);
 
@@ -90,7 +92,11 @@ export function ProbePanel({ placeId, initialData }: Props) {
             {new Date(result.generatedAt).toLocaleString("ko-KR")} 기준
           </p>
           <ul className="divide-y rounded-md border">
-            {result.features.map((f) => (
+            {result.features.map((f) => {
+              // 버티컬 booking 라벨 오버라이드: f.key === "booking" 일 때만
+              const displayLabel =
+                f.key === "booking" && bookingLabel ? bookingLabel : f.label;
+              return (
               <li
                 key={f.key}
                 className="flex items-start gap-3 px-4 py-3 text-sm"
@@ -108,7 +114,7 @@ export function ProbePanel({ placeId, initialData }: Props) {
                 </span>
                 <div className="flex-1 space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium">{f.label}</span>
+                    <span className="font-medium">{displayLabel}</span>
                     <span
                       className={
                         "text-xs " +
@@ -131,7 +137,8 @@ export function ProbePanel({ placeId, initialData }: Props) {
                   )}
                 </div>
               </li>
-            ))}
+              );
+            })}
           </ul>
         </CardContent>
       )}

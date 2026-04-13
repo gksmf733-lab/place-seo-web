@@ -283,5 +283,6 @@ export async function listJobs(): Promise<SavedJob[]> {
     scrapeStartedAt: d.scrape_started_at,
     scrapeFinishedAt: d.scrape_finished_at,
     createdAt: d.created_at,
+    scrapedData: d.scraped_data,
   }));
 }

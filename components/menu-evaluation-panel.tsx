@@ -22,6 +22,10 @@ type Props = {
   menus: MenuDisplay[];
   hasReviews: boolean;
   initialEvaluation: MenuEvaluation | null;
+  /** 버티컬 라벨 (예: "시술 메뉴", "객실", "강좌") */
+  itemsLabel?: string;
+  /** 단위 명사 (예: "시술", "객실") */
+  itemUnit?: string;
 };
 
 function formatDate(iso?: string): string {
@@ -38,6 +42,8 @@ export function MenuEvaluationPanel({
   menus,
   hasReviews,
   initialEvaluation,
+  itemsLabel = "메뉴",
+  itemUnit = "메뉴",
 }: Props) {
   const router = useRouter();
   const [evaluation, setEvaluation] = useState<MenuEvaluation | null>(
@@ -102,7 +108,7 @@ export function MenuEvaluationPanel({
             className="text-sm font-bold"
             style={{ color: "var(--naver-gray-900)" }}
           >
-            메뉴 ({menus.length}건)
+            {itemsLabel} ({menus.length}건)
           </h3>
           {evaluation && (
             <p
@@ -119,7 +125,7 @@ export function MenuEvaluationPanel({
           disabled={busy || !hasReviews || menus.length === 0}
           size="sm"
         >
-          {busy ? "분석 중…" : evaluation ? "재분석" : "메뉴 평가 생성"}
+          {busy ? "분석 중…" : evaluation ? "재분석" : `${itemUnit} 평가 생성`}
         </Button>
       </div>
 
