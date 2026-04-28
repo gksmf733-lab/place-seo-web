@@ -17,30 +17,42 @@ import { extractMenuItems, extractMenuItemsV2 } from "./menu";
 import type { ScrapedPlace } from "./types";
 
 /**
- * Vercel 서버리스(또는 AWS Lambda) 환경에서는 @sparticuz/chromium 번들,
+ * BROWSERBASE_API_KEY 가 있으면 Browserbase 원격 브라우저에 CDP 로 접속한다.
  * 그 외(로컬 개발)에서는 로컬에 설치된 playwright 번들 Chromium 사용.
  *
- * 환경 감지:
- *  - process.env.VERCEL === "1"  — Vercel 서버리스 런타임
- *  - process.env.AWS_LAMBDA_FUNCTION_NAME — AWS Lambda
- *  - 그 외 → 로컬 개발 간주
+ * Vercel 서버리스 함수 내부에서 chromium 바이너리를 직접 실행하면
+ * 동시 실행 시 /tmp/chromium 에서 ETXTBSY 가 발생하므로, 프로덕션에서는
+ * 브라우저를 함수 밖(Browserbase)에서 띄우도록 구성한다.
  */
 export async function launchBrowser(): Promise<Browser> {
-  const isServerless =
-    process.env.VERCEL === "1" ||
-    !!process.env.AWS_LAMBDA_FUNCTION_NAME;
+  if (process.env.BROWSERBASE_API_KEY) {
+    const projectId = process.env.BROWSERBASE_PROJECT_ID;
+    if (!projectId) {
+      throw new Error(
+        "BROWSERBASE_PROJECT_ID 환경변수가 설정되지 않았습니다.",
+      );
+    }
 
-  if (isServerless) {
-    const [{ chromium: playwrightChromium }, sparticuzMod] = await Promise.all([
+    const [{ chromium }, { default: Browserbase }] = await Promise.all([
       import("playwright-core"),
-      import("@sparticuz/chromium"),
+      import("@browserbasehq/sdk"),
     ]);
-    const chromiumLib = sparticuzMod.default ?? sparticuzMod;
-    return playwrightChromium.launch({
-      args: chromiumLib.args,
-      executablePath: await chromiumLib.executablePath(),
-      headless: true,
+
+    const bb = new Browserbase({ apiKey: process.env.BROWSERBASE_API_KEY });
+    const session = await bb.sessions.create({ projectId });
+    const browser = await chromium.connectOverCDP(session.connectUrl);
+
+    // browser.close() 는 CDP 연결만 끊을 뿐 Browserbase 세션 자체는
+    // 타임아웃까지 남는다. 분당 과금이라 좀비 세션이 비용이 되므로
+    // 연결 종료 시 세션을 강제로 release 한다.
+    browser.on("disconnected", () => {
+      bb.sessions
+        .update(session.id, { projectId, status: "REQUEST_RELEASE" })
+        .catch(() => {
+          /* 이미 만료/종료된 세션이면 무시 */
+        });
     });
+    return browser;
   }
 
   // 로컬 개발: playwright(일반) 패키지가 devDependencies로 있어야 함
