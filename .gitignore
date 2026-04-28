@@ -65,3 +65,7 @@ next-env.d.ts
 
 # local probe outputs
 /data/probe/
+.env*.local
+
+# crawler service deps
+/crawler/node_modules/

@@ -2,10 +2,10 @@
   "name": "naver-place-review-crawler",
   "version": "2.0.0",
   "description": "네이버 플레이스 리뷰 크롤러 + 모바일 IP 회전",
-  "main": "src/server.js",
+  "main": "server.js",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js",
+    "start": "node server.js",
+    "dev": "nodemon server.js",
     "check-phone": "adb devices"
   },
   "dependencies": {
