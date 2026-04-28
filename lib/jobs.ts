@@ -286,6 +286,16 @@ export async function resetCanvasPulled(id: string): Promise<void> {
   }
 }
 
+export async function deleteJobs(ids: string[]): Promise<number> {
+  if (ids.length === 0) return 0;
+  const { error, count } = await supabase
+    .from("jobs")
+    .delete({ count: "exact" })
+    .in("id", ids);
+  if (error) throw new Error(`삭제 실패: ${error.message}`);
+  return count ?? ids.length;
+}
+
 export async function listJobs(): Promise<SavedJob[]> {
   const { data, error } = await supabase
     .from("jobs")

@@ -156,6 +156,58 @@ export async function POST(req: Request) {
   }
 }
 
+export async function DELETE(req: Request) {
+  try {
+    const body = await req.json();
+    const { jobId, clearAll, indices } = body as {
+      jobId?: string;
+      clearAll?: boolean;
+      indices?: number[];
+    };
+
+    if (!jobId) {
+      return Response.json({ error: "jobId가 필요합니다." }, { status: 400 });
+    }
+
+    const job = await readJob(jobId);
+    if (!job) {
+      return Response.json({ error: "job을 찾을 수 없습니다." }, { status: 404 });
+    }
+
+    const existing = toArray(job.reviewsData);
+
+    if (clearAll) {
+      await updateJob(jobId, {
+        reviewsData: [],
+        reviewAnalysis: null,
+        reviewIntro: null,
+        ownerIntro: null,
+        menuEvaluation: null,
+      });
+      return Response.json({ ok: true, deleted: existing.length, remaining: 0 });
+    }
+
+    if (Array.isArray(indices) && indices.length > 0) {
+      const removeSet = new Set(indices);
+      const filtered = existing.filter((_, i) => !removeSet.has(i));
+      await updateJob(jobId, { reviewsData: filtered });
+      return Response.json({
+        ok: true,
+        deleted: existing.length - filtered.length,
+        remaining: filtered.length,
+      });
+    }
+
+    return Response.json({ error: "clearAll 또는 indices가 필요합니다." }, { status: 400 });
+  } catch (err) {
+    console.error("[api/reviews DELETE] error:", err);
+    return Response.json(
+      { error: "삭제 중 오류 발생", details: err instanceof Error ? err.message : String(err) },
+      { status: 500 },
+    );
+  }
+}
+
 export async function GET(req: Request) {
   try {
     const url = new URL(req.url);

@@ -20,6 +20,8 @@ import type { ScrapedPlace, MenuItem } from "@/lib/scraper/types";
 import { ExcelDownloadButton } from "@/components/excel-download-button";
 import { ReviewsTable } from "@/components/reviews-table";
 import { ReviewUploadButton } from "@/components/review-upload-button";
+import { ReviewDeleteButton } from "@/components/review-delete-button";
+import { ReviewCrawlPanel } from "@/components/review-crawl-panel";
 import { RescrapeButton } from "@/components/rescrape-button";
 import { PromptPicker } from "@/components/prompt-picker";
 import { ReviewAnalysisPanel } from "@/components/review-analysis-panel";
@@ -430,7 +432,16 @@ export default async function AdminJobDetailPage({
           initialData={job.probeData ?? null}
         />
 
-        {/* 수집 리뷰 데이터 패널 (엑셀 업로드) */}
+        {/* 리뷰 수집 패널 */}
+        {job.url && (
+          <Card>
+            <CardContent className="pt-6">
+              <ReviewCrawlPanel jobId={job.id} placeUrl={job.url} />
+            </CardContent>
+          </Card>
+        )}
+
+        {/* 수집 리뷰 데이터 테이블 */}
         {(() => {
           // 데이터 전처리: 글자면 파싱하고, 배열이 아니면 배열로 감싸서 무조건 표로 만듦
           let displayReviews = job.reviewsData;
@@ -449,23 +460,7 @@ export default async function AdminJobDetailPage({
             !displayReviews ||
             (Array.isArray(displayReviews) && displayReviews.length === 0)
           ) {
-            if (!job.placeId) return null;
-            return (
-              <Card>
-                <CardHeader className="flex flex-row items-start sm:items-center justify-between pb-4 gap-4">
-                  <div className="space-y-1">
-                    <CardTitle>수집 리뷰</CardTitle>
-                    <CardDescription>
-                      엑셀 파일(.xlsx, .csv)을 업로드하여 리뷰 데이터를 등록하세요.
-                    </CardDescription>
-                  </div>
-                  <ReviewUploadButton placeId={job.placeId} />
-                </CardHeader>
-                <CardContent className="py-6 text-center text-sm text-muted-foreground">
-                  등록된 리뷰 데이터가 없습니다. 엑셀 파일을 업로드해 주세요.
-                </CardContent>
-              </Card>
-            );
+            return null;
           }
 
           return (
@@ -474,21 +469,17 @@ export default async function AdminJobDetailPage({
                 <div className="space-y-1">
                   <CardTitle>수집 리뷰 ({displayReviews.length}건)</CardTitle>
                   <CardDescription>
-                    엑셀로 업로드된 리뷰 데이터입니다. 드래그 복사 및 엑셀 저장이 가능합니다.
+                    수집된 리뷰 데이터입니다. 드래그 복사 및 엑셀 저장이 가능합니다.
                   </CardDescription>
-                  {job.placeId && (
-                    <p className="text-xs text-muted-foreground pt-1">
-                      Place ID: <span className="font-mono">{job.placeId}</span>
-                    </p>
-                  )}
                 </div>
-                <div className="flex items-center gap-2">
-                  <ReviewUploadButton placeId={job.placeId!} />
+                <div className="flex items-center gap-2 flex-wrap">
+                  {job.placeId && <ReviewUploadButton placeId={job.placeId} />}
                   <ExcelDownloadButton data={displayReviews} fileName={`${job.placeName || "업체"}_리뷰데이터.csv`} />
+                  <ReviewDeleteButton jobId={job.id} reviewCount={displayReviews.length} />
                 </div>
               </CardHeader>
               <CardContent>
-                <ReviewsTable reviews={displayReviews} />
+                <ReviewsTable reviews={displayReviews} jobId={job.id} />
               </CardContent>
             </Card>
           );

@@ -28,8 +28,7 @@ import type { ScrapedPlace } from "./types";
 export async function launchBrowser(): Promise<Browser> {
   const isServerless =
     process.env.VERCEL === "1" ||
-    !!process.env.AWS_LAMBDA_FUNCTION_NAME ||
-    process.env.NODE_ENV === "production";
+    !!process.env.AWS_LAMBDA_FUNCTION_NAME;
 
   if (isServerless) {
     const [{ chromium: playwrightChromium }, sparticuzMod] = await Promise.all([
