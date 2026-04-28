@@ -1,0 +1,21 @@
+{
+  "name": "naver-place-review-crawler",
+  "version": "2.0.0",
+  "description": "네이버 플레이스 리뷰 크롤러 + 모바일 IP 회전",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "check-phone": "adb devices"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "cors": "^2.8.5",
+    "puppeteer": "^22.12.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}

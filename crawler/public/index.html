@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>네이버 플레이스 리뷰 수집기</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #181b22;
+    --panel-2: #1f232c;
+    --border: #2a2f3a;
+    --text: #e6e8ee;
+    --muted: #8a90a0;
+    --accent: #00c473;
+    --accent-soft: rgba(0, 196, 115, 0.12);
+    --warn: #ffb84d;
+    --error: #ff6b6b;
+    --info: #4d9fff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+  .container { max-width: 960px; margin: 0 auto; padding: 40px 24px; }
+  header { margin-bottom: 24px; }
+  h1 { margin: 0 0 8px; font-size: 28px; letter-spacing: -0.02em; }
+  .subtitle { color: var(--muted); font-size: 14px; }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+  }
+  .panel h3 { margin: 0 0 12px; font-size: 14px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  /* 폰 상태 패널 */
+  .phone-status {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .status-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--muted);
+  }
+  .status-dot.connected { background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+  .status-dot.error { background: var(--error); }
+  .ip-display {
+    font-family: 'SF Mono', Monaco, monospace;
+    font-size: 14px;
+    background: var(--panel-2);
+    padding: 6px 12px;
+    border-radius: 6px;
+    color: var(--info);
+  }
+
+  .form-row { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+  .form-row > * { flex: 1; min-width: 200px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  input, select {
+    width: 100%;
+    padding: 12px 14px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--accent); }
+
+  .checkbox-row {
+    display: flex; align-items: center; gap: 8px;
+    margin: 12px 0; font-size: 14px; color: var(--muted);
+  }
+  .checkbox-row input { width: auto; }
+
+  button.primary {
+    width: 100%;
+    padding: 14px;
+    background: var(--accent);
+    color: #001b10;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    transition: filter 0.15s;
+  }
+  button.primary:hover:not(:disabled) { filter: brightness(1.1); }
+  button.primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  button.secondary {
+    padding: 8px 14px;
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  button.secondary:hover { background: var(--panel-2); }
+
+  .status-msg {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 16px;
+    display: none;
+  }
+  .status-msg.show { display: block; }
+  .status-msg.loading { background: var(--accent-soft); color: var(--accent); }
+  .status-msg.error { background: rgba(255,107,107,0.12); color: var(--error); }
+  .status-msg.info { background: rgba(77,159,255,0.12); color: var(--info); }
+
+  .progress-steps {
+    display: flex; gap: 8px; margin-top: 12px; font-size: 12px;
+  }
+  .step {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    text-align: center;
+    color: var(--muted);
+  }
+  .step.active { border-color: var(--accent); color: var(--accent); }
+  .step.done { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+  .stats { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 16px; }
+  .stat { font-size: 13px; color: var(--muted); }
+  .stat strong { color: var(--text); font-size: 20px; display: block; margin-top: 2px; }
+
+  .review-list { display: flex; flex-direction: column; gap: 12px; }
+  .review {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .review-meta {
+    display: flex; gap: 12px; align-items: center;
+    margin-bottom: 8px; font-size: 13px; color: var(--muted);
+    flex-wrap: wrap;
+  }
+  .rating { color: var(--warn); font-weight: 600; }
+  .review-content { font-size: 14px; white-space: pre-wrap; }
+
+  .actions { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+
+  .spinner {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .hint {
+    font-size: 12px; color: var(--muted);
+    margin-top: 6px; line-height: 1.5;
+  }
+  code { background: var(--panel-2); padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>📍 네이버 플레이스 리뷰 수집기</h1>
+    <p class="subtitle">Wi-Fi 핫스팟 + 모바일 데이터 토글 · 가게당 새 IP 자동 할당</p>
+  </header>
+
+  <!-- 폰 연결 상태 -->
+  <div class="panel">
+    <h3>📱 폰 연결 상태</h3>
+    <div class="phone-status">
+      <span class="status-dot" id="phoneDot"></span>
+      <span id="phoneStatus">확인 중...</span>
+      <div style="margin-left: auto; display: flex; gap: 8px;">
+        <span class="ip-display" id="currentIp">IP: -</span>
+        <button class="secondary" id="refreshIpBtn">🔄 IP 확인</button>
+        <button class="secondary" id="rotateIpBtn">🔁 IP 변경</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 크롤링 폼 -->
+  <div class="panel">
+    <h3>🔍 리뷰 수집</h3>
+    <div class="form-row">
+      <div style="flex: 3;">
+        <label for="url">네이버 플레이스 URL</label>
+        <input type="text" id="url"
+               placeholder="https://map.naver.com/p/entry/place/12345678" />
+        <p class="hint">예: <code>https://m.place.naver.com/restaurant/1234567/home</code></p>
+      </div>
+      <div style="flex: 1;">
+        <label for="maxReviews">수집 개수</label>
+        <select id="maxReviews">
+          <option value="50">50개</option>
+          <option value="100" selected>100개</option>
+          <option value="200">200개</option>
+          <option value="300">300개</option>
+          <option value="500">500개</option>
+        </select>
+      </div>
+    </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="rotateBeforeCrawl" checked>
+      <label for="rotateBeforeCrawl" style="margin: 0;">크롤링 전에 IP 자동 변경 (권장)</label>
+    </div>
+    <button class="primary" id="crawlBtn">▶ 리뷰 수집 시작</button>
+    <div class="progress-steps" id="progressSteps" style="display:none;">
+      <div class="step" id="step1">1. IP 변경</div>
+      <div class="step" id="step2">2. 페이지 진입</div>
+      <div class="step" id="step3">3. 리뷰 로드</div>
+      <div class="step" id="step4">4. 데이터 추출</div>
+    </div>
+  </div>
+
+  <div class="status-msg" id="status"></div>
+
+  <!-- 결과 -->
+  <div class="panel" id="resultPanel" style="display:none;">
+    <div class="stats" id="stats"></div>
+    <div class="actions">
+      <button class="secondary" id="downloadJson">📄 JSON 다운로드</button>
+      <button class="secondary" id="downloadCsv">📊 CSV 다운로드</button>
+    </div>
+    <div class="review-list" id="reviewList"></div>
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let lastResult = null;
+
+// ===== 폰 상태 확인 =====
+async function checkPhone() {
+  try {
+    const res = await fetch('/api/health');
+    const data = await res.json();
+    if (data.status === 'ok') {
+      $('phoneDot').className = 'status-dot connected';
+      $('phoneStatus').innerHTML = `폰 연결됨 <span style="color:var(--muted)">(${data.adbDevices.length}대)</span>`;
+      refreshIp();
+    } else {
+      $('phoneDot').className = 'status-dot error';
+      $('phoneStatus').innerHTML = `<span style="color:var(--error)">폰 미연결</span> · <span style="color:var(--muted)">${data.error}</span>`;
+    }
+  } catch (err) {
+    $('phoneDot').className = 'status-dot error';
+    $('phoneStatus').textContent = '서버 응답 없음';
+  }
+}
+
+async function refreshIp() {
+  $('currentIp').textContent = 'IP: 조회 중...';
+  try {
+    const res = await fetch('/api/ip');
+    const data = await res.json();
+    $('currentIp').textContent = data.ip ? `IP: ${data.ip}` : 'IP: 조회 실패';
+  } catch (err) {
+    $('currentIp').textContent = 'IP: 오류';
+  }
+}
+
+$('refreshIpBtn').addEventListener('click', refreshIp);
+
+$('rotateIpBtn').addEventListener('click', async () => {
+  $('rotateIpBtn').disabled = true;
+  $('rotateIpBtn').innerHTML = '<span class="spinner"></span>변경 중...';
+  showStatus('<span class="spinner"></span>모바일 데이터 토글로 IP 변경 중... (약 10~15초)', 'loading');
+  try {
+    const res = await fetch('/api/rotate-ip', { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      showStatus(`✅ IP 변경 완료: ${data.oldIp || '?'} → <strong>${data.newIp}</strong>`, 'info');
+      $('currentIp').textContent = `IP: ${data.newIp}`;
+    } else {
+      showStatus('❌ ' + data.error, 'error');
+    }
+  } catch (err) {
+    showStatus('❌ ' + err.message, 'error');
+  } finally {
+    $('rotateIpBtn').disabled = false;
+    $('rotateIpBtn').innerHTML = '🔁 IP 변경';
+  }
+});
+
+// ===== 크롤링 =====
+$('crawlBtn').addEventListener('click', async () => {
+  const url = $('url').value.trim();
+  const maxReviews = parseInt($('maxReviews').value);
+  const rotateIpBefore = $('rotateBeforeCrawl').checked;
+
+  if (!url) { showStatus('URL을 입력해주세요.', 'error'); return; }
+  if (!url.includes('naver')) { showStatus('네이버 플레이스 URL을 입력해주세요.', 'error'); return; }
+
+  $('crawlBtn').disabled = true;
+  $('crawlBtn').innerHTML = '<span class="spinner"></span>작업 중...';
+  $('progressSteps').style.display = 'flex';
+  $('resultPanel').style.display = 'none';
+  resetSteps();
+
+  if (rotateIpBefore) {
+    setStep(1, 'active');
+    showStatus('<span class="spinner"></span>1단계: 모바일 IP 변경 중... (약 10~15초)', 'loading');
+  } else {
+    setStep(2, 'active');
+    showStatus('<span class="spinner"></span>리뷰 페이지 진입 중...', 'loading');
+  }
+
+  try {
+    const res = await fetch('/api/crawl', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url, maxReviews, rotateIpBefore }),
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || '알 수 없는 오류');
+
+    setStep(1, 'done'); setStep(2, 'done'); setStep(3, 'done'); setStep(4, 'done');
+
+    if (data.ipInfo) {
+      $('currentIp').textContent = `IP: ${data.ipInfo.newIp}`;
+    }
+
+    lastResult = data;
+    renderResult(data);
+    hideStatus();
+  } catch (err) {
+    showStatus('❌ ' + err.message, 'error');
+  } finally {
+    $('crawlBtn').disabled = false;
+    $('crawlBtn').innerHTML = '▶ 리뷰 수집 시작';
+  }
+});
+
+function setStep(n, state) { $(`step${n}`).className = `step ${state}`; }
+function resetSteps() { for (let i = 1; i <= 4; i++) $(`step${i}`).className = 'step'; }
+
+function showStatus(html, type) {
+  const el = $('status');
+  el.className = 'status-msg show ' + type;
+  el.innerHTML = html;
+}
+function hideStatus() { $('status').className = 'status-msg'; }
+
+function renderResult(data) {
+  const ratings = data.reviews.filter(r => r.rating).map(r => r.rating);
+  const avgRating = ratings.length
+    ? (ratings.reduce((a,b) => a+b, 0) / ratings.length).toFixed(2)
+    : '-';
+  const ipChange = data.ipInfo
+    ? `${data.ipInfo.oldIp || '?'} → ${data.ipInfo.newIp}`
+    : '미사용';
+
+  $('stats').innerHTML = `
+    <div class="stat">가게명<strong>${escapeHtml(data.place.name)}</strong></div>
+    <div class="stat">수집 리뷰<strong>${data.totalCollected}개</strong></div>
+    <div class="stat">평균 별점<strong>${avgRating}</strong></div>
+    <div class="stat">소요 시간<strong>${data.elapsedSec}초</strong></div>
+    <div class="stat">사용 IP<strong style="font-size:14px;font-family:monospace;">${ipChange}</strong></div>
+  `;
+
+  $('reviewList').innerHTML = data.reviews.map(r => `
+    <div class="review">
+      <div class="review-meta">
+        ${r.rating ? `<span class="rating">★ ${r.rating}</span>` : ''}
+        <span>📅 ${escapeHtml(r.date)}</span>
+        ${r.author ? `<span>· ${escapeHtml(r.author)}</span>` : ''}
+      </div>
+      <div class="review-content">${escapeHtml(r.content)}</div>
+    </div>
+  `).join('');
+
+  $('resultPanel').style.display = 'block';
+}
+
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+$('downloadJson').addEventListener('click', () => {
+  if (!lastResult) return;
+  download(`reviews_${lastResult.place.id}.json`,
+    JSON.stringify(lastResult, null, 2), 'application/json');
+});
+
+$('downloadCsv').addEventListener('click', () => {
+  if (!lastResult) return;
+  const rows = [['별점', '날짜', '작성자', '본문']];
+  lastResult.reviews.forEach(r => {
+    rows.push([r.rating ?? '', r.date, r.author ?? '', r.content]);
+  });
+  const csv = '\uFEFF' + rows.map(row =>
+    row.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')
+  ).join('\n');
+  download(`reviews_${lastResult.place.id}.csv`, csv, 'text/csv;charset=utf-8');
+});
+
+function download(filename, content, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// 초기 로드
+checkPhone();
+setInterval(checkPhone, 30000); // 30초마다 폰 상태 확인
+</script>
+</body>
+</html>
