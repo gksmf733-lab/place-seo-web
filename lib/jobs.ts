@@ -1,6 +1,32 @@
 
 import { supabase } from "./supabase";
 import crypto from "node:crypto";
+import type { ScrapedPlace } from "./scraper/types";
+import type { ProbeResult } from "./probe";
+
+/** Supabase jobs 테이블 행의 Raw 타입 */
+type JobRow = {
+  id: string;
+  url: string;
+  place_name: string;
+  contact: string;
+  memo?: string;
+  scrape_status: ScrapeStatus;
+  place_id?: string;
+  scrape_error?: string;
+  scrape_started_at?: string;
+  scrape_finished_at?: string;
+  created_at: string;
+  scraped_data?: ScrapedPlace | null;
+  reviews_data?: Record<string, unknown>[] | null;
+  review_analysis?: ReviewAnalysis | null;
+  review_intro?: ReviewIntro | null;
+  owner_intro?: OwnerIntro | null;
+  menu_evaluation?: MenuEvaluation | null;
+  probe_data?: ProbeResult | null;
+  worksheet_markdown?: string;
+  canvas_pulled_at?: string | null;
+};
 
 export type OrderInput = {
   url: string;
@@ -19,13 +45,13 @@ export type SavedJob = OrderInput & {
   scrapeError?: string;
   scrapeStartedAt?: string;
   scrapeFinishedAt?: string;
-  scrapedData?: any;
-  reviewsData?: any;
+  scrapedData?: ScrapedPlace | null;
+  reviewsData?: unknown[] | null;
   reviewAnalysis?: ReviewAnalysis | null;
   reviewIntro?: ReviewIntro | null;
   ownerIntro?: OwnerIntro | null;
   menuEvaluation?: MenuEvaluation | null;
-  probeData?: any | null;
+  probeData?: ProbeResult | null;
   worksheetMarkdown?: string;
   canvasPulledAt?: string | null;
 };
@@ -177,7 +203,7 @@ export async function updateJob(
   id: string,
   patch: Partial<SavedJob>,
 ): Promise<SavedJob | null> {
-  const updates: Record<string, any> = {};
+  const updates: Record<string, unknown> = {};
   if (patch.scrapeStatus !== undefined) updates.scrape_status = patch.scrapeStatus;
   if (patch.placeId !== undefined) updates.place_id = patch.placeId;
   if (patch.scrapeError !== undefined) updates.scrape_error = patch.scrapeError;
@@ -220,7 +246,7 @@ export async function listJobsForCanvasPull(): Promise<SavedJob[]> {
     return [];
   }
 
-  return data.map((d: any) => ({
+  return data.map((d: JobRow) => ({
     id: d.id,
     url: d.url,
     placeName: d.place_name,
@@ -271,7 +297,7 @@ export async function listJobs(): Promise<SavedJob[]> {
     return [];
   }
 
-  return data.map((d: any) => ({
+  return data.map((d: JobRow) => ({
     id: d.id,
     url: d.url,
     placeName: d.place_name,

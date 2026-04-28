@@ -14,7 +14,7 @@ import {
   extractAiBrief,
 } from "./extract";
 import { extractMenuItems, extractMenuItemsV2 } from "./menu";
-import type { ScrapedPlace, MenuItem } from "./types";
+import type { ScrapedPlace } from "./types";
 
 /**
  * Vercel 서버리스(또는 AWS Lambda) 환경에서는 @sparticuz/chromium 번들,

@@ -19,6 +19,7 @@ import type { Section } from "@/lib/sections";
 import type { ScrapedPlace, MenuItem } from "@/lib/scraper/types";
 import { ExcelDownloadButton } from "@/components/excel-download-button";
 import { ReviewsTable } from "@/components/reviews-table";
+import { ReviewUploadButton } from "@/components/review-upload-button";
 import { RescrapeButton } from "@/components/rescrape-button";
 import { PromptPicker } from "@/components/prompt-picker";
 import { ReviewAnalysisPanel } from "@/components/review-analysis-panel";
@@ -429,7 +430,7 @@ export default async function AdminJobDetailPage({
           initialData={job.probeData ?? null}
         />
 
-        {/* AI Canvas에서 넘어온 리뷰 데이터 패널 */}
+        {/* 수집 리뷰 데이터 패널 (엑셀 업로드) */}
         {(() => {
           // 데이터 전처리: 글자면 파싱하고, 배열이 아니면 배열로 감싸서 무조건 표로 만듦
           let displayReviews = job.reviewsData;
@@ -451,10 +452,17 @@ export default async function AdminJobDetailPage({
             if (!job.placeId) return null;
             return (
               <Card>
-                <CardContent className="py-8 text-center text-sm text-muted-foreground">
-                  AI Canvas에서 접수된 리뷰(분석) 결과가 없습니다.
-                  <br />
-                  현재 Place ID: <strong>{job.placeId}</strong>
+                <CardHeader className="flex flex-row items-start sm:items-center justify-between pb-4 gap-4">
+                  <div className="space-y-1">
+                    <CardTitle>수집 리뷰</CardTitle>
+                    <CardDescription>
+                      엑셀 파일(.xlsx, .csv)을 업로드하여 리뷰 데이터를 등록하세요.
+                    </CardDescription>
+                  </div>
+                  <ReviewUploadButton placeId={job.placeId} />
+                </CardHeader>
+                <CardContent className="py-6 text-center text-sm text-muted-foreground">
+                  등록된 리뷰 데이터가 없습니다. 엑셀 파일을 업로드해 주세요.
                 </CardContent>
               </Card>
             );
@@ -464,17 +472,20 @@ export default async function AdminJobDetailPage({
             <Card>
               <CardHeader className="flex flex-row items-start sm:items-center justify-between pb-4 gap-4">
                 <div className="space-y-1">
-                  <CardTitle>AI Canvas 수집 리뷰 ({displayReviews.length}건)</CardTitle>
+                  <CardTitle>수집 리뷰 ({displayReviews.length}건)</CardTitle>
                   <CardDescription>
-                    AI Canvas를 통해 수집된 상세 데이터입니다. 드래그 복사 및 엑셀 저장이 가능합니다.
+                    엑셀로 업로드된 리뷰 데이터입니다. 드래그 복사 및 엑셀 저장이 가능합니다.
                   </CardDescription>
                   {job.placeId && (
                     <p className="text-xs text-muted-foreground pt-1">
-                      송출된 Place ID: <span className="font-mono">{job.placeId}</span>
+                      Place ID: <span className="font-mono">{job.placeId}</span>
                     </p>
                   )}
                 </div>
-                <ExcelDownloadButton data={displayReviews} fileName={`${job.placeName || "업체"}_리브데이터.csv`} />
+                <div className="flex items-center gap-2">
+                  <ReviewUploadButton placeId={job.placeId!} />
+                  <ExcelDownloadButton data={displayReviews} fileName={`${job.placeName || "업체"}_리뷰데이터.csv`} />
+                </div>
               </CardHeader>
               <CardContent>
                 <ReviewsTable reviews={displayReviews} />

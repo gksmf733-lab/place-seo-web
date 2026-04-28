@@ -84,10 +84,17 @@ function escapeTsvCell(v: string): string {
 }
 
 type Props = {
-  reviews: ReviewRow[];
+  reviews: unknown[];
 };
 
-export function ReviewsTable({ reviews }: Props) {
+function toReviewRow(item: unknown): ReviewRow {
+  if (typeof item === "string") return item;
+  if (typeof item === "object" && item !== null) return item as ReviewRow;
+  return String(item);
+}
+
+export function ReviewsTable({ reviews: rawReviews }: Props) {
+  const reviews = rawReviews.map(toReviewRow);
   const [selStart, setSelStart] = useState<CellPos | null>(null);
   const [selEnd, setSelEnd] = useState<CellPos | null>(null);
   const [dragging, setDragging] = useState(false);

@@ -4,33 +4,42 @@ import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface ExcelDownloadButtonProps {
-  data: any[];
+  data: unknown[];
   fileName?: string;
+}
+
+/** unknown[]를 Record<string, unknown>[]로 안전하게 변환 */
+function toRecordArray(arr: unknown[]): Record<string, unknown>[] {
+  return arr.filter(
+    (item): item is Record<string, unknown> =>
+      typeof item === "object" && item !== null && !Array.isArray(item),
+  );
 }
 
 export function ExcelDownloadButton({ data, fileName = "리뷰_데이터.csv" }: ExcelDownloadButtonProps) {
   const downloadExcel = () => {
     if (!data || data.length === 0) return;
 
+    const records = toRecordArray(data);
+    if (records.length === 0) return;
+
     // 모든 키를 수집하여 컬럼 헤더 생성
-    const headers = Array.from(new Set(data.flatMap(item => Object.keys(item))));
-    
+    const headers = Array.from(new Set(records.flatMap(item => Object.keys(item))));
+
     // CSV 헤더 행 추가
     let csvContent = "\uFEFF"; // 한글 깨짐 방지용 BOM
     csvContent += headers.join(",") + "\r\n";
 
     // 데이터 행 추가
-    data.forEach(item => {
+    records.forEach(item => {
       const row = headers.map(header => {
-        let val = item[header] ?? "";
-        // 줄바꿈이나 콤마가 있으면 쌍따옴표로 감쌈
-        if (typeof val === "string") {
-          val = val.replace(/"/g, '""'); // 따옴표 이스케이프
-          if (val.search(/("|,|\n)/g) >= 0) {
-            val = `"${val}"`;
-          }
+        const raw = item[header] ?? "";
+        if (typeof raw !== "string") return String(raw);
+        let escaped = raw.replace(/"/g, '""');
+        if (/("|,|\n)/.test(escaped)) {
+          escaped = `"${escaped}"`;
         }
-        return val;
+        return escaped;
       });
       csvContent += row.join(",") + "\r\n";
     });
@@ -48,9 +57,9 @@ export function ExcelDownloadButton({ data, fileName = "리뷰_데이터.csv" }:
   };
 
   return (
-    <Button 
-      onClick={downloadExcel} 
-      variant="outline" 
+    <Button
+      onClick={downloadExcel}
+      variant="outline"
       size="sm"
       className="ml-auto flex items-center gap-2"
     >
