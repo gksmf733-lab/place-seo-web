@@ -52,34 +52,39 @@ function toArray(v: unknown): unknown[] {
 
 /* ── 크롤러 응답 → ReviewsTable 형식 매핑 ── */
 
+// 크롤러가 새 키(account/companions/authMethod) 또는 구 키(author/companion/proofType)
+// 어느 쪽으로 보내도 받을 수 있게 폴백.
 type CrawlerReview = {
   account?: string;
+  author?: string;
   visitDate?: string;
   visitTime?: string;
   reservation?: string;
   waitTime?: string;
   purpose?: string;
   companions?: string;
+  companion?: string;
   keywords?: string;
   visitCount?: string;
   authMethod?: string;
-  viewCount?: string;
+  proofType?: string;
+  viewCount?: string | number;
   content?: string;
 };
 
 function mapReview(r: CrawlerReview): Record<string, unknown> {
   return {
-    account: r.account || "",
+    account: r.account || r.author || "",
     visitDate: r.visitDate || "",
     visitTime: r.visitTime || "",
     reservation: r.reservation || "",
     waitTime: r.waitTime || "",
     purpose: r.purpose || "",
-    companions: r.companions || "",
+    companions: r.companions || r.companion || "",
     keywords: r.keywords || "",
     visitCount: r.visitCount || "",
-    authMethod: r.authMethod || "",
-    viewCount: r.viewCount || "",
+    authMethod: r.authMethod || r.proofType || "",
+    viewCount: r.viewCount ?? "",
     review: r.content || "",
   };
 }

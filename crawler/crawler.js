@@ -268,19 +268,54 @@ async function crawlReviews(url, maxReviews = 100) {
           });
         }
 
-        // 방문 정보 분류
-        let visitTime = null;    // 점심에 방문, 저녁에 방문 등
-        let reservation = null;  // 예약 후 이용, 예약 없이 이용
-        let waitTime = null;     // 바로 입장, 대기 시간 10분 이내 등
-        let purpose = null;      // 일상, 데이트 등
-        let companion = null;    // 친척·형제자매, 지인·동료 등
+        // 방문 정보 분류 — 실제 Naver 태그 30건 표본 분석 기반.
+        //
+        //   visitTime   : "...에 방문"    (점심에/저녁에/밤에/아침에 방문)
+        //   reservation : "예약 ..."        (예약 후 이용 / 예약 없이 이용)
+        //                 "...이용"          (포장·배달 이용 등 이용 형태)
+        //   waitTime    : "...입장|대기..." (바로 입장 / 대기 시간 N분 ...)
+        //   companions  : "...・..." (전각 가운뎃점 U+30FB)         — 연인・배우자, 친척・형제자매
+        //                 "함께"                                   — 가족과 함께
+        //                 명시적 명사 (부모님/자녀/친구/...)
+        //   purpose     : 그 외 모든 태그 (일상/데이트/친목/나들이/...)
+        let visitTime = null;
+        let reservation = null;
+        let waitTime = null;
+        let purpose = null;
+        let companions = null;
 
-        visitTags.forEach(tag => {
-          if (tag.includes('방문')) visitTime = tag;
-          else if (tag.includes('예약')) reservation = tag;
-          else if (tag.includes('입장') || tag.includes('대기')) waitTime = tag;
-          else if (['일상', '데이트', '기념일', '비즈니스', '소개팅', '가족모임', '회식'].some(k => tag.includes(k))) purpose = tag;
-          else companion = companion ? companion + ', ' + tag : tag;
+        const COMPANION_EXACT = new Set([
+          '혼자', '단체',
+          '부모님', '자녀', '아이', '아이들',
+          '친구', '동료', '가족', '지인',
+          '연인', '배우자', '친척', '형제', '자매', '형제자매',
+          '반려동물',
+        ]);
+
+        const classify = (tag) => {
+          if (tag.includes('에 방문')) return 'visitTime';
+          if (tag.includes('예약')) return 'reservation';
+          if (tag.includes('입장') || tag.includes('대기')) return 'waitTime';
+          if (tag.endsWith('이용')) return 'reservation';            // 포장·배달 이용 등
+          if (tag.includes('・') || tag.includes('함께')) return 'companions'; // 연인・배우자
+          if (COMPANION_EXACT.has(tag)) return 'companions';
+          return 'purpose';                                          // catch-all
+        };
+
+        const append = (current, tag) => (current ? current + ', ' + tag : tag);
+
+        // Naver 는 동행이 여러 개면 단일 태그 안에 ", "로 join 해서 주는 경우가 있다
+        // (예: "부모님, 아이" 한 덩어리). split 후 각 sub-tag 를 개별 분류.
+        visitTags.forEach((rawTag) => {
+          rawTag.split(',').map((s) => s.trim()).filter(Boolean).forEach((tag) => {
+            switch (classify(tag)) {
+              case 'visitTime':   visitTime   = append(visitTime, tag); break;
+              case 'reservation': reservation = append(reservation, tag); break;
+              case 'waitTime':    waitTime    = append(waitTime, tag); break;
+              case 'companions':  companions  = append(companions, tag); break;
+              default:            purpose     = append(purpose, tag);
+            }
+          });
         });
 
         // 키워드 태그 (디저트가 맛있어요 등)
@@ -296,29 +331,30 @@ async function crawlReviews(url, maxReviews = 100) {
         // 방문 횟수
         let visitCount = null;
         // 인증 수단
-        let proofType = null;
+        let authMethod = null;
         item.querySelectorAll('.pui__gfuUIT').forEach(s => {
           const txt = s.innerText.trim();
           if (txt.includes('번째 방문')) visitCount = txt;
           else if (txt.includes('인증 수단')) {
-            proofType = txt.replace('인증 수단', '').trim();
+            authMethod = txt.replace('인증 수단', '').trim();
           }
         });
 
         if (content || visitDate) {
           results.push({
-            author: author || null,
+            // 어드민 API mapReview 와 키 이름 일치 (account / companions / authMethod)
+            account: author || null,
             profileId,
             visitDate: visitDate || '(날짜 없음)',
             visitTime,
             reservation,
             waitTime,
             purpose,
-            companion,
+            companions,
             content: content || '(본문 없음)',
             keywords: keywords.length > 0 ? keywords.join(', ') : null,
             visitCount: visitCount || null,
-            proofType: proofType || null,
+            authMethod: authMethod || null,
             viewCount: null, // 나중에 채움
           });
         }
