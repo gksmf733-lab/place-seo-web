@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -185,6 +185,14 @@ export default async function AdminJobDetailPage({
               </div>
               <div className="flex items-center gap-2">
                 <RescrapeButton jobId={job.id} />
+                <a
+                  href={`/admin/jobs/${job.id}/print`}
+                  target="_blank"
+                  rel="noopener"
+                  className={buttonVariants({ variant: "outline", size: "sm" })}
+                >
+                  PDF 저장
+                </a>
                 <Badge variant={STATUS_VARIANT[job.scrapeStatus]}>
                   {STATUS_LABEL[job.scrapeStatus]}
                 </Badge>

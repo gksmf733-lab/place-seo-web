@@ -147,3 +147,107 @@
   --naver-amber: #FF9900;
   --naver-red: #FF3B3B;
 }
+
+/* ────────── PDF / 인쇄 ────────── */
+
+/* 화면(브라우저)에서는 러닝 헤더 숨김 — 커버에 큰 타이틀이 있음 */
+.print-running-header {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 18mm 12mm 14mm 12mm;
+  }
+
+  /* 인쇄 시 색상/그라디언트 손실 방지 */
+  *,
+  *::before,
+  *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+  }
+
+  /* 어드민 네비/푸터 등 인쇄 영역 외 요소 숨김 */
+  .no-print {
+    display: none !important;
+  }
+
+  /* 매 페이지 상단에 고정되는 러닝 헤더
+     (Chrome/Edge 인쇄에서 fixed 가 매 페이지 반복 렌더됨) */
+  .print-running-header {
+    display: block;
+    position: fixed;
+    top: -10mm;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 8pt;
+    color: #94a3b8;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 4px;
+  }
+
+  /* 표지(첫 페이지)에서는 러닝 헤더가 디자인을 침범하지 않도록 흰색 박스로 가림 */
+  .cover {
+    position: relative;
+    z-index: 2;
+  }
+  .cover::before {
+    content: "";
+    position: fixed;
+    top: -12mm;
+    left: -2mm;
+    right: -2mm;
+    height: 14mm;
+    background: white;
+    z-index: 1;
+  }
+
+  /* 페이지 분할 제어 */
+  .page-section {
+    page-break-inside: auto;
+  }
+  .page-break-after {
+    page-break-after: always;
+    break-after: page;
+  }
+  .page-break-before {
+    page-break-before: always;
+    break-before: page;
+  }
+  .avoid-break,
+  table,
+  tr,
+  li,
+  h1,
+  h2,
+  h3 {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  h2,
+  h3 {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  /* 링크 URL 노출 안 함 (PDF 인쇄 시 깔끔) */
+  a[href]::after {
+    content: "" !important;
+  }
+
+  /* print-root 의 내부 패딩은 @page margin 으로 대체 */
+  .print-root {
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+}
+
