@@ -482,7 +482,7 @@ export default async function AdminJobDetailPage({
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                   {job.placeId && <ReviewUploadButton placeId={job.placeId} />}
-                  <ExcelDownloadButton data={displayReviews} fileName={`${job.placeName || "업체"}_리뷰데이터.csv`} />
+                  <ExcelDownloadButton data={displayReviews} fileName={`${job.placeName || "업체"}_리뷰데이터.xlsx`} />
                   <ReviewDeleteButton jobId={job.id} reviewCount={displayReviews.length} />
                 </div>
               </CardHeader>
