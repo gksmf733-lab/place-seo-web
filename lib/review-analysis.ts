@@ -1,6 +1,7 @@
 import { generateText, Output } from "ai";
 import { z } from "zod";
 import type { ReviewAnalysis } from "./jobs";
+import { resolvePrompt } from "./prompts";
 
 const MODEL_ID = "anthropic/claude-sonnet-4.6";
 const MAX_REVIEWS = 120;
@@ -97,8 +98,9 @@ export async function analyzeReviews(params: {
   placeName: string;
   category?: string;
   reviews: unknown[];
+  promptId?: string; // 어드민에서 선택된 분석 지침 (없으면 review_analysis 섹션의 default)
 }): Promise<ReviewAnalysis> {
-  const { placeName, category, reviews } = params;
+  const { placeName, category, reviews, promptId } = params;
   if (!reviews || reviews.length === 0) {
     throw new Error("분석할 리뷰가 없습니다.");
   }
@@ -108,12 +110,27 @@ export async function analyzeReviews(params: {
     throw new Error("리뷰 텍스트를 추출할 수 없습니다.");
   }
 
-  const system = `당신은 한국 네이버 플레이스 리뷰를 분석하는 마케팅/SEO 전문가입니다.
+  const baseSystem = `당신은 한국 네이버 플레이스 리뷰를 분석하는 마케팅/SEO 전문가입니다.
 업체의 고객 리뷰를 분석해 종합요약, 감성, 키워드, 강점, 개선사항, 고객 페르소나, 황금 키워드를 추출합니다.
 - 한국어로 답하세요.
 - 과장·추측 대신 리뷰에서 반복적으로 드러나는 패턴만 사용하세요.
 - '황금 키워드'는 단순 빈출어가 아니라 구매 전환·검색 유입에 기여할 만한 감정·상황·차별점 결합 구문을 뽑으세요.
 - 페르소나는 서로 뚜렷이 구분되어야 합니다.`;
+
+  // 사용자 지정 분석 지침 (DB prompts 테이블의 review_analysis 섹션 default 또는 promptId)
+  // 출력은 기존 JSON 스키마로 강제되지만, 지침의 톤·원칙(가짜 데이터 금지, 근거 명시,
+  // 실제 인용만 사용 등)이 system prompt 에 추가돼 결과 품질이 보강된다.
+  const customPrompt = await resolvePrompt("review_analysis", promptId).catch(
+    () => null,
+  );
+  const system = customPrompt?.promptTemplate
+    ? `${baseSystem}
+
+[추가 분석 지침 — ${customPrompt.name}]
+${customPrompt.promptTemplate}
+
+[중요] 위 추가 지침의 톤·원칙·표현 기준을 따르되, 최종 출력은 반드시 지정된 JSON 스키마(summary / sentiment / keywords / strengths / improvements / personas / goldenKeywords) 안에서 표현하세요. 스키마에 없는 새 필드를 만들거나 형식을 바꾸지 마세요.`
+    : baseSystem;
 
   const prompt = `[업체명] ${placeName}
 [카테고리] ${category ?? "(미상)"}
@@ -138,6 +155,8 @@ ${corpus}
       analyzedAt: new Date().toISOString(),
       model: MODEL_ID,
       reviewCount: used,
+      promptId: customPrompt?.id,
+      promptName: customPrompt?.name,
     },
   };
 }

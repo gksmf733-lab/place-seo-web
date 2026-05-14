@@ -137,6 +137,8 @@ export type ReviewAnalysis = {
     analyzedAt: string;
     model: string;
     reviewCount: number;
+    promptId?: string;
+    promptName?: string;
   };
 };
 
